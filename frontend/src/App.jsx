@@ -132,11 +132,55 @@ function App() {
     }
   };
 
+  // Helper to parse date text (e.g. 'November 2025' or '2025-11') to Date object for chronological sorting
+  const parseIssuedDate = (dateStr) => {
+    if (!dateStr) return new Date(0);
+    const cleanStr = dateStr.trim().toLowerCase();
+    
+    // Check for YYYY-MM-DD or YYYY-MM format
+    const isoMatch = cleanStr.match(/^(\d{4})[-/](\d{1,2})([-/](\d{1,2}))?$/);
+    if (isoMatch) {
+      const year = parseInt(isoMatch[1], 10);
+      const month = parseInt(isoMatch[2], 10) - 1;
+      const day = isoMatch[4] ? parseInt(isoMatch[4], 10) : 1;
+      return new Date(year, month, day);
+    }
+    
+    const monthMap = {
+      jan: 0, januari: 0, january: 0,
+      feb: 1, februari: 1, february: 1,
+      mar: 2, maret: 2, march: 2,
+      apr: 3, april: 3,
+      mei: 4, may: 4,
+      jun: 5, juni: 5, june: 5,
+      jul: 6, juli: 6, july: 6,
+      agu: 7, agustus: 7, august: 7,
+      sep: 8, september: 8,
+      okt: 9, oktober: 9, october: 9,
+      nov: 10, november: 10,
+      des: 11, desember: 11, december: 11
+    };
+    
+    const yearMatch = cleanStr.match(/\b(19\d{2}|20\d{2})\b/);
+    const year = yearMatch ? parseInt(yearMatch[1], 10) : new Date().getFullYear();
+    
+    let month = 0;
+    for (const [key, val] of Object.entries(monthMap)) {
+      if (cleanStr.includes(key)) {
+        month = val;
+        break;
+      }
+    }
+    
+    return new Date(year, month, 1);
+  };
+
   // Fetch Certifications from database
   const fetchCertifications = async () => {
     try {
       const response = await axios.get(`${API}/certification`);
-      setCertifications(response.data);
+      const sorted = response.data.sort((a, b) => parseIssuedDate(b.issuedAt) - parseIssuedDate(a.issuedAt));
+      setCertifications(sorted);
     } catch (error) {
       console.error('Failed to fetch certifications:', error);
       // Fallback mock data if database isn't connected yet

@@ -197,14 +197,17 @@ router.post('/portfolio', authMiddleware, async (req, res) => {
           technologies: Array.isArray(technologies) ? technologies : []
         }
       ])
-      .select()
-      .single();
+      .select();
 
     if (error) {
       throw error;
     }
 
-    const portfolio = data;
+    if (!data || data.length === 0) {
+      throw new Error('Database tidak mengembalikan data setelah penyimpanan. Silakan nonaktifkan RLS (Row Level Security) pada tabel porto_portfolios di dashboard Supabase Anda.');
+    }
+
+    const portfolio = data[0];
     res.json({
       id: portfolio.id,
       title: portfolio.title,
@@ -232,14 +235,14 @@ router.put('/portfolio/:id', authMiddleware, async (req, res) => {
       const { data: oldData, error: oldError } = await supabase
         .from('porto_portfolios')
         .select('image_name')
-        .eq('id', id)
-        .single();
+        .eq('id', id);
       
-      if (!oldError && oldData?.image_name && oldData.image_name !== imagePublicId) {
+      const oldImgName = oldData && oldData.length > 0 ? oldData[0].image_name : null;
+      if (!oldError && oldImgName && oldImgName !== imagePublicId) {
         // Remove old file from Supabase Storage
         await supabase.storage
           .from(SUPABASE_BUCKET)
-          .remove([oldData.image_name]);
+          .remove([oldImgName]);
       }
     }
 
@@ -254,14 +257,17 @@ router.put('/portfolio/:id', authMiddleware, async (req, res) => {
         technologies: Array.isArray(technologies) ? technologies : []
       })
       .eq('id', id)
-      .select()
-      .single();
+      .select();
 
     if (error) {
       throw error;
     }
 
-    const portfolio = data;
+    if (!data || data.length === 0) {
+      throw new Error('Database tidak mengembalikan data setelah pembaruan. Silakan nonaktifkan RLS (Row Level Security) pada tabel porto_portfolios di dashboard Supabase Anda.');
+    }
+
+    const portfolio = data[0];
     res.json({
       id: portfolio.id,
       title: portfolio.title,
@@ -285,13 +291,13 @@ router.delete('/portfolio/:id', authMiddleware, async (req, res) => {
     const { data: oldData, error: oldError } = await supabase
       .from('porto_portfolios')
       .select('image_name')
-      .eq('id', id)
-      .single();
+      .eq('id', id);
 
-    if (!oldError && oldData?.image_name) {
+    const oldImgName = oldData && oldData.length > 0 ? oldData[0].image_name : null;
+    if (!oldError && oldImgName) {
       await supabase.storage
         .from(SUPABASE_BUCKET)
-        .remove([oldData.image_name]);
+        .remove([oldImgName]);
     }
 
     const { error } = await supabase
@@ -359,14 +365,17 @@ router.post('/certification', authMiddleware, async (req, res) => {
           image_name: imagePublicId || null,
         }
       ])
-      .select()
-      .single();
+      .select();
 
     if (error) {
       throw error;
     }
 
-    const cert = data;
+    if (!data || data.length === 0) {
+      throw new Error('Database tidak mengembalikan data setelah penyimpanan. Silakan nonaktifkan RLS (Row Level Security) pada tabel porto_certifications di dashboard Supabase Anda.');
+    }
+
+    const cert = data[0];
     res.json({
       id: cert.id,
       title: cert.title,
@@ -393,13 +402,13 @@ router.put('/certification/:id', authMiddleware, async (req, res) => {
       const { data: oldData, error: oldError } = await supabase
         .from('porto_certifications')
         .select('image_name')
-        .eq('id', id)
-        .single();
+        .eq('id', id);
       
-      if (!oldError && oldData?.image_name && oldData.image_name !== imagePublicId) {
+      const oldImgName = oldData && oldData.length > 0 ? oldData[0].image_name : null;
+      if (!oldError && oldImgName && oldImgName !== imagePublicId) {
         await supabase.storage
           .from(SUPABASE_BUCKET)
-          .remove([oldData.image_name]);
+          .remove([oldImgName]);
       }
     }
 
@@ -415,14 +424,17 @@ router.put('/certification/:id', authMiddleware, async (req, res) => {
         image_name: imagePublicId || null,
       })
       .eq('id', id)
-      .select()
-      .single();
+      .select();
 
     if (error) {
       throw error;
     }
 
-    const cert = data;
+    if (!data || data.length === 0) {
+      throw new Error('Database tidak mengembalikan data setelah pembaruan. Silakan nonaktifkan RLS (Row Level Security) pada tabel porto_certifications di dashboard Supabase Anda.');
+    }
+
+    const cert = data[0];
     res.json({
       id: cert.id,
       title: cert.title,
@@ -446,13 +458,13 @@ router.delete('/certification/:id', authMiddleware, async (req, res) => {
     const { data: oldData, error: oldError } = await supabase
       .from('porto_certifications')
       .select('image_name')
-      .eq('id', id)
-      .single();
+      .eq('id', id);
 
-    if (!oldError && oldData?.image_name) {
+    const oldImgName = oldData && oldData.length > 0 ? oldData[0].image_name : null;
+    if (!oldError && oldImgName) {
       await supabase.storage
         .from(SUPABASE_BUCKET)
-        .remove([oldData.image_name]);
+        .remove([oldImgName]);
     }
 
     const { error } = await supabase
