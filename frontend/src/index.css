@@ -1,0 +1,114 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-secondary: var(--brand-secondary);
+  --color-brand-accent: var(--brand-accent);
+  --color-brand-bg: var(--brand-bg);
+  --color-brand-card: var(--brand-card);
+  --color-brand-text: var(--brand-text);
+  --color-brand-text-muted: var(--brand-text-muted);
+  --color-brand-border: var(--brand-border);
+}
+
+:root {
+  /* Light Mode - Sunset Sea Theme */
+  --brand-bg: #fffbf5; /* Soft warm peach/sand */
+  --brand-card: rgba(255, 255, 255, 0.85);
+  --brand-primary: #ff7e5f; /* Sunrise coral */
+  --brand-secondary: #feb47b; /* Sunset yellow */
+  --brand-accent: #ff4e50; /* Sunset red */
+  --brand-text: #2d231e; /* Deep dark cocoa */
+  --brand-text-muted: #7c675c; /* Muted cocoa brown */
+  --brand-border: rgba(254, 180, 123, 0.4); /* Peach border tint */
+  
+  --particle-color: rgba(234, 88, 12, 0.45); /* Orange particles */
+}
+
+html.dark {
+  /* Dark Mode - Sky Themed Blue */
+  --brand-bg: #040819; /* Midnight blue space */
+  --brand-card: rgba(16, 23, 49, 0.85);
+  --brand-primary: #0ea5e9; /* Sky blue */
+  --brand-secondary: #38bdf8; /* Soft light blue */
+  --brand-accent: #06b6d4; /* Electric cyan */
+  --brand-text: #e0f2fe; /* Soft ice blue text */
+  --brand-text-muted: #7dd3fc; /* Bright blue secondary text */
+  --brand-border: rgba(14, 165, 233, 0.25); /* Cyan border tint */
+  
+  --particle-color: rgba(6, 182, 212, 0.5); /* Cyan particles */
+}
+
+body {
+  background-color: var(--brand-bg);
+  color: var(--brand-text);
+  font-family: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  overflow-x: hidden;
+  margin: 0;
+}
+
+/* Glassmorphism card */
+.glass-card {
+  background: rgba(255, 253, 249, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(254, 180, 123, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html.dark .glass-card {
+  background: rgba(12, 18, 48, 0.65);
+  border: 1px solid rgba(6, 182, 212, 0.15);
+}
+
+.glass-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -10px var(--brand-border);
+}
+
+/* Custom interactive scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--brand-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--brand-primary);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--brand-accent);
+}
+
+/* Glow effects */
+.glow-primary {
+  box-shadow: 0 0 20px rgba(255, 126, 95, 0.3);
+}
+html.dark .glow-primary {
+  box-shadow: 0 0 20px rgba(14, 165, 233, 0.3);
+}
+
+.glow-accent {
+  box-shadow: 0 0 20px rgba(255, 78, 80, 0.4);
+}
+html.dark .glow-accent {
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+}
+
+/* Micro-animations */
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+.interactive-glow {
+  animation: pulseGlow 4s infinite ease-in-out;
+}
