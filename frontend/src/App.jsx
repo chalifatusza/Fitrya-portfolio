@@ -664,7 +664,7 @@ function App() {
               <div className="text-center space-y-2">
                 <h2 className="text-3xl md:text-4xl font-extrabold text-brand-text">Sertifikasi & Penghargaan</h2>
                 <p className="text-brand-text-muted text-sm max-w-md mx-auto">
-                  Dokumen kompetensi dan keahlian yang telah divalidasi oleh institusi kredibel.
+                  Dokumen kompetensi dan keahlian yang terverifikasi.
                 </p>
               </div>
 
@@ -861,8 +861,8 @@ function App() {
               <button
                 onClick={() => setAdminTab('projects')}
                 className={`px-5 py-2 text-sm font-bold border-b-2 transition-all cursor-pointer ${adminTab === 'projects'
-                    ? 'border-brand-primary text-brand-primary'
-                    : 'border-transparent text-brand-text-muted hover:text-brand-text'
+                  ? 'border-brand-primary text-brand-primary'
+                  : 'border-transparent text-brand-text-muted hover:text-brand-text'
                   }`}
               >
                 Manajemen Proyek
@@ -870,8 +870,8 @@ function App() {
               <button
                 onClick={() => setAdminTab('certifications')}
                 className={`px-5 py-2 text-sm font-bold border-b-2 transition-all cursor-pointer ${adminTab === 'certifications'
-                    ? 'border-brand-primary text-brand-primary'
-                    : 'border-transparent text-brand-text-muted hover:text-brand-text'
+                  ? 'border-brand-primary text-brand-primary'
+                  : 'border-transparent text-brand-text-muted hover:text-brand-text'
                   }`}
               >
                 Manajemen Sertifikasi
