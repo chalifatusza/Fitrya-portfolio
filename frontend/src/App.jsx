@@ -136,7 +136,7 @@ function App() {
   const parseIssuedDate = (dateStr) => {
     if (!dateStr) return new Date(0);
     const cleanStr = dateStr.trim().toLowerCase();
-    
+
     // Check for YYYY-MM-DD or YYYY-MM format
     const isoMatch = cleanStr.match(/^(\d{4})[-/](\d{1,2})([-/](\d{1,2}))?$/);
     if (isoMatch) {
@@ -145,7 +145,7 @@ function App() {
       const day = isoMatch[4] ? parseInt(isoMatch[4], 10) : 1;
       return new Date(year, month, day);
     }
-    
+
     const monthMap = {
       jan: 0, januari: 0, january: 0,
       feb: 1, februari: 1, february: 1,
@@ -160,10 +160,10 @@ function App() {
       nov: 10, november: 10,
       des: 11, desember: 11, december: 11
     };
-    
+
     const yearMatch = cleanStr.match(/\b(19\d{2}|20\d{2})\b/);
     const year = yearMatch ? parseInt(yearMatch[1], 10) : new Date().getFullYear();
-    
+
     let month = 0;
     for (const [key, val] of Object.entries(monthMap)) {
       if (cleanStr.includes(key)) {
@@ -171,7 +171,7 @@ function App() {
         break;
       }
     }
-    
+
     return new Date(year, month, 1);
   };
 
@@ -566,7 +566,7 @@ function App() {
               <div className="text-center space-y-2">
                 <h2 className="text-3xl md:text-4xl font-extrabold text-brand-text">Keahlian Teknologi</h2>
                 <p className="text-brand-text-muted text-sm max-w-md mx-auto">
-                  Perpaduan teknologi yang saya kuasai untuk membangun mengembangkan web dan mobile app.
+                  Beberapa teknologi yang saya kuasai untuk mengembangkan website dan mobile app.
                 </p>
               </div>
 
