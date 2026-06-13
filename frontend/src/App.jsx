@@ -251,7 +251,7 @@ function App() {
         <nav className="max-w-6xl mx-auto flex items-center justify-between p-4 rounded-2xl glass-card backdrop-blur-md shadow-lg">
           <div className="flex items-center gap-2 font-black text-xl tracking-tight cursor-pointer" onClick={() => { setView('public'); window.location.hash = ''; }}>
             <span className="bg-gradient-to-r from-brand-primary to-brand-accent bg-clip-text text-transparent">
-              Fitrya's Portfolio
+              Fitrya Chalifatus Z
             </span>
           </div>
 
@@ -625,9 +625,8 @@ function App() {
                     <button
                       type="submit"
                       disabled={sendingContact}
-                      className={`w-full py-3 rounded-xl text-white font-bold hover:bg-brand-accent transition text-xs flex items-center justify-center gap-2 shadow-lg glow-primary ${
-                        sendingContact ? 'bg-brand-primary/55 cursor-not-allowed' : 'bg-brand-primary'
-                      }`}
+                      className={`w-full py-3 rounded-xl text-white font-bold hover:bg-brand-accent transition text-xs flex items-center justify-center gap-2 shadow-lg glow-primary ${sendingContact ? 'bg-brand-primary/55 cursor-not-allowed' : 'bg-brand-primary'
+                        }`}
                     >
                       {sendingContact ? (
                         <>
