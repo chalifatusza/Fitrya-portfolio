@@ -97,6 +97,13 @@ html.dark .glow-accent {
   box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
 }
 
+.glow-secondary {
+  box-shadow: 0 0 20px rgba(254, 180, 123, 0.3);
+}
+html.dark .glow-secondary {
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
+}
+
 /* Micro-animations */
 @keyframes pulseGlow {
   0%, 100% {

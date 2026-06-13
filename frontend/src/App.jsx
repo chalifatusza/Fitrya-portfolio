@@ -42,6 +42,7 @@ function App() {
   // Form Contact States
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
   const [contactSuccess, setContactSuccess] = useState(false);
+  const [sendingContact, setSendingContact] = useState(false);
 
   // Sync dark/light mode HTML class
   useEffect(() => {
@@ -217,13 +218,27 @@ function App() {
     });
   };
 
-  const handleContactSubmit = (e) => {
+  const handleContactSubmit = async (e) => {
     e.preventDefault();
-    setContactSuccess(true);
-    setTimeout(() => {
-      setContactSuccess(false);
+    setSendingContact(true);
+    try {
+      await axios.post('https://formsubmit.co/ajax/chalifatuszahro@gmail.com', {
+        name: contactForm.name,
+        email: contactForm.email,
+        message: contactForm.message,
+        _subject: `Pesan Baru dari Portfolio: ${contactForm.name}`
+      });
+      setContactSuccess(true);
       setContactForm({ name: '', email: '', message: '' });
-    }, 3000);
+      setTimeout(() => {
+        setContactSuccess(false);
+      }, 5000);
+    } catch (error) {
+      console.error(error);
+      alert('Gagal mengirim pesan. Silakan hubungi langsung ke chalifatuszahro@gmail.com');
+    } finally {
+      setSendingContact(false);
+    }
   };
 
   return (
@@ -357,9 +372,9 @@ function App() {
               </div>
 
               <h1 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight leading-none text-brand-text max-w-4xl">
-                Junior Developer in{' '}
+                Junior Developer in <br />
                 <span className="bg-gradient-to-r from-brand-primary via-brand-secondary to-brand-accent bg-clip-text text-transparent">
-                  Web & App Development
+                  Web & Mobile App
                 </span>
               </h1>
 
@@ -434,8 +449,8 @@ function App() {
 
                 {/* Cloud & Tools Card */}
                 <div className="p-6 rounded-2xl glass-card text-left flex flex-col space-y-4">
-                  <div className="p-3 bg-brand-secondary/15 text-brand-text rounded-2xl w-fit">
-                    <Cpu size={24} className="text-brand-secondary" />
+                  <div className="p-3 bg-brand-secondary/10 text-brand-secondary rounded-2xl w-fit glow-secondary">
+                    <Cpu size={24} />
                   </div>
                   <h3 className="text-lg font-bold text-brand-text">Platform & Cloud</h3>
                   <p className="text-xs text-brand-text-muted leading-relaxed">
@@ -443,7 +458,7 @@ function App() {
                   </p>
                   <div className="flex flex-wrap gap-2 pt-2">
                     {['Git & GitHub', 'Aiven MySQL', 'Supabase', 'Vercel'].map((skill) => (
-                      <span key={skill} className="text-xs font-semibold px-3 py-1 bg-brand-text-muted/10 text-brand-text rounded-lg">
+                      <span key={skill} className="text-xs font-semibold px-3 py-1 bg-brand-secondary/10 text-brand-secondary rounded-lg">
                         {skill}
                       </span>
                     ))}
@@ -609,15 +624,27 @@ function App() {
 
                     <button
                       type="submit"
-                      className="w-full py-3 rounded-xl bg-brand-primary text-white font-bold hover:bg-brand-accent transition text-xs flex items-center justify-center gap-2 shadow-lg glow-primary"
+                      disabled={sendingContact}
+                      className={`w-full py-3 rounded-xl text-white font-bold hover:bg-brand-accent transition text-xs flex items-center justify-center gap-2 shadow-lg glow-primary ${
+                        sendingContact ? 'bg-brand-primary/55 cursor-not-allowed' : 'bg-brand-primary'
+                      }`}
                     >
-                      <Send size={14} />
-                      <span>Kirim Pesan</span>
+                      {sendingContact ? (
+                        <>
+                          <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          <span>Mengirim...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send size={14} />
+                          <span>Kirim Pesan</span>
+                        </>
+                      )}
                     </button>
 
                     {contactSuccess && (
                       <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 rounded-xl text-center text-xs font-medium mt-2">
-                        Pesan Anda berhasil dikirim! (Demo mode)
+                        Pesan Anda berhasil dikirim langsung ke email Fitrya!
                       </div>
                     )}
                   </form>

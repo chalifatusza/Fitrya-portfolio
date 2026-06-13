@@ -16,8 +16,8 @@ const InteractiveBackground = () => {
 
     // Tech names to display on floating nodes
     const techSkills = [
-      'React', 'NodeJS', 'MySQL', 'Tailwind', 'JavaScript',
-      'HTML', 'CSS', 'Express', 'Vite', 'Cloudinary', 'Netlify', 'Git'
+      'Flutter', 'NodeJS', 'MySQL', 'Tailwind', 'JavaScript',
+      'HTML', 'CSS', 'Aiven MySQL', 'Supabase', 'Vercel', 'Git'
     ];
 
     // Mouse configuration
@@ -64,7 +64,7 @@ const InteractiveBackground = () => {
             const force = (mouse.radius - distance) / mouse.radius;
             const directionX = dx / distance;
             const directionY = dy / distance;
-            
+
             // Move nodes toward cursor based on distance
             this.x += directionX * force * 1.8;
             this.y += directionY * force * 1.8;
@@ -84,7 +84,7 @@ const InteractiveBackground = () => {
               const directionX = dx / distance;
               const directionY = dy / distance;
               const pushStrength = force * wave.forceStrength;
-              
+
               this.x += directionX * pushStrength;
               this.y += directionY * pushStrength;
             }
@@ -132,7 +132,7 @@ const InteractiveBackground = () => {
     const drawConnections = (isDark) => {
       const maxDistance = 180;
       const lineColor = isDark ? 'rgba(14, 165, 233, 0.08)' : 'rgba(254, 180, 123, 0.15)';
-      
+
       for (let i = 0; i < nodes.length; i++) {
         for (let j = i + 1; j < nodes.length; j++) {
           const dx = nodes[i].x - nodes[j].x;
@@ -144,13 +144,13 @@ const InteractiveBackground = () => {
             ctx.beginPath();
             ctx.moveTo(nodes[i].x, nodes[i].y);
             ctx.lineTo(nodes[j].x, nodes[j].y);
-            
+
             // Adjust line opacity by distance
             const alpha = (1 - distance / maxDistance) * (isDark ? 0.18 : 0.28);
-            ctx.strokeStyle = isDark 
-              ? `rgba(6, 182, 212, ${alpha})` 
+            ctx.strokeStyle = isDark
+              ? `rgba(6, 182, 212, ${alpha})`
               : `rgba(255, 126, 95, ${alpha})`;
-              
+
             ctx.lineWidth = 1;
             ctx.stroke();
           }
@@ -162,7 +162,7 @@ const InteractiveBackground = () => {
     const drawShockwaves = (isDark) => {
       shockwaves.forEach((wave, index) => {
         wave.currentRadius += wave.speed;
-        
+
         if (wave.currentRadius >= wave.maxRadius) {
           // Remove expired shockwaves
           shockwaves.splice(index, 1);
@@ -172,12 +172,12 @@ const InteractiveBackground = () => {
         // Draw shockwave boundary ring
         ctx.beginPath();
         ctx.arc(wave.x, wave.y, wave.currentRadius, 0, Math.PI * 2);
-        
+
         const opacity = (1 - wave.currentRadius / wave.maxRadius) * 0.35;
-        ctx.strokeStyle = isDark 
-          ? `rgba(6, 182, 212, ${opacity})` 
+        ctx.strokeStyle = isDark
+          ? `rgba(6, 182, 212, ${opacity})`
           : `rgba(255, 78, 80, ${opacity})`;
-          
+
         ctx.lineWidth = 2;
         ctx.stroke();
       });
@@ -223,7 +223,7 @@ const InteractiveBackground = () => {
     const animate = () => {
       // Detect isDark state dynamically from document element
       const isDark = document.documentElement.classList.contains('dark');
-      
+
       // Transparent clear to allow document background showing
       ctx.clearRect(0, 0, width, height);
 
