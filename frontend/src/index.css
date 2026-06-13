@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+html {
+  scroll-behavior: smooth;
+}
+
 @theme {
   --color-brand-primary: var(--brand-primary);
   --color-brand-secondary: var(--brand-secondary);
