@@ -660,7 +660,7 @@ function App() {
                   Manajemen Proyek Portofolio
                 </h1>
                 <p className="text-xs text-brand-text-muted mt-1 leading-relaxed">
-                  Tambah, ubah, atau hapus karya proyek yang ditampilkan di galeri publik. Kredensial terhubung ke database.
+                  Tambah, ubah, atau hapus karya proyek yang ditampilkan di galeri publik.
                 </p>
               </div>
               <button

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { Upload, X, Image as ImageIcon, CheckCircle } from 'lucide-react';
 
@@ -8,6 +8,11 @@ const ImageUpload = ({ onUpload, currentImage, onRemove, isEdit }) => {
   const [progress, setProgress] = useState(0);
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef(null);
+
+  // Sync preview state when parent prop changes (e.g. form reset or switch edit project)
+  useEffect(() => {
+    setPreview(currentImage || '');
+  }, [currentImage]);
 
   const processFile = async (file) => {
     // File validation
@@ -115,7 +120,10 @@ const ImageUpload = ({ onUpload, currentImage, onRemove, isEdit }) => {
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
+        onClick={() => !preview && !uploading && fileInputRef.current?.click()}
         className={`relative flex flex-col md:flex-row items-center justify-center p-6 border-2 border-dashed rounded-xl transition-all duration-300 ${
+          !preview ? 'cursor-pointer' : ''
+        } ${
           isDragOver 
             ? 'border-brand-accent bg-brand-primary/10' 
             : 'border-brand-border hover:border-brand-primary bg-brand-card'
@@ -131,7 +139,10 @@ const ImageUpload = ({ onUpload, currentImage, onRemove, isEdit }) => {
               />
               <button
                 type="button"
-                onClick={handleRemove}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRemove();
+                }}
                 className="absolute top-1 right-1 bg-brand-accent/90 text-white rounded-full p-1 hover:bg-brand-accent transition shadow"
                 title="Hapus gambar"
               >
@@ -165,14 +176,9 @@ const ImageUpload = ({ onUpload, currentImage, onRemove, isEdit }) => {
             <div className="space-y-1">
               <p className="text-sm font-medium text-brand-text">
                 Seret file gambar di sini, atau{' '}
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  className="text-brand-primary font-bold hover:underline focus:outline-none"
-                >
+                <span className="text-brand-primary font-bold hover:underline">
                   pilih file
-                </button>
+                </span>
               </p>
               <p className="text-xs text-brand-text-muted">
                 Mendukung: JPEG, PNG, WebP, GIF. Ukuran maksimum: 10MB
