@@ -3,13 +3,21 @@ import axios from 'axios';
 import {
   Sun, Moon, Lock, LogOut, Plus, Trash2, Edit, ExternalLink,
   Github, Linkedin, Mail, ArrowRight, Menu, X, Code, Database,
-  Cpu, Sparkles, Send, FolderGit, AlertCircle
+  Cpu, Sparkles, Send, FolderGit, AlertCircle, Image as ImageIcon
 } from 'lucide-react';
 import InteractiveBackground from './components/InteractiveBackground';
 import ImageUpload from './components/ImageUpload';
 
 // Base API configuration (fallback to local if netlify serverless is not running)
 const API = '/api';
+
+const tabLabels = {
+  home: 'Beranda',
+  skills: 'Keahlian',
+  projects: 'Karya',
+  certification: 'Sertifikasi',
+  contact: 'Kontak'
+};
 
 function App() {
   // Navigation & UI States
@@ -38,6 +46,21 @@ function App() {
     projectUrl: ''
   });
   const [formSubmitLoading, setFormSubmitLoading] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
+
+  // Certifications States
+  const [certifications, setCertifications] = useState([]);
+  const [certForm, setCertForm] = useState({
+    title: '',
+    issuer: '',
+    issuedAt: '',
+    credentialUrl: '',
+    credentialId: '',
+    imageUrl: '',
+    imagePublicId: ''
+  });
+  const [editingCert, setEditingCert] = useState(null);
+  const [adminTab, setAdminTab] = useState('projects'); // 'projects' or 'certifications'
 
   // Form Contact States
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
@@ -109,8 +132,32 @@ function App() {
     }
   };
 
+  // Fetch Certifications from database
+  const fetchCertifications = async () => {
+    try {
+      const response = await axios.get(`${API}/certification`);
+      setCertifications(response.data);
+    } catch (error) {
+      console.error('Failed to fetch certifications:', error);
+      // Fallback mock data if database isn't connected yet
+      setCertifications([
+        {
+          id: 1,
+          title: 'Belajar Fundamental Front-End Web Development',
+          issuer: 'Dicoding Indonesia',
+          issuedAt: 'November 2025',
+          credentialId: 'DICODING-RDFM56Y',
+          credentialUrl: 'https://dicoding.com',
+          imageUrl: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=800&auto=format&fit=crop',
+          imagePublicId: ''
+        }
+      ]);
+    }
+  };
+
   useEffect(() => {
     fetchProjects();
+    fetchCertifications();
   }, []);
 
   // Theme Toggle
@@ -218,6 +265,75 @@ function App() {
     });
   };
 
+  // Certification CRUD Handlers
+  const handleCertImageUpload = (url, publicId) => {
+    setCertForm({ ...certForm, imageUrl: url, imagePublicId: publicId });
+  };
+
+  const handleCertImageRemove = () => {
+    setCertForm({ ...certForm, imageUrl: '', imagePublicId: '' });
+  };
+
+  const handleCertSubmit = async (e) => {
+    e.preventDefault();
+    setFormSubmitLoading(true);
+    try {
+      if (editingCert) {
+        await axios.put(`${API}/certification/${editingCert.id}`, certForm, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      } else {
+        await axios.post(`${API}/certification`, certForm, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      }
+      fetchCertifications();
+      resetCertForm();
+    } catch (error) {
+      alert('Gagal menyimpan sertifikat: ' + (error.response?.data?.error || error.message));
+    } finally {
+      setFormSubmitLoading(false);
+    }
+  };
+
+  const handleCertEditClick = (cert) => {
+    setEditingCert(cert);
+    setCertForm({
+      title: cert.title,
+      issuer: cert.issuer,
+      issuedAt: cert.issuedAt || '',
+      credentialUrl: cert.credentialUrl || '',
+      credentialId: cert.credentialId || '',
+      imageUrl: cert.imageUrl || '',
+      imagePublicId: cert.imagePublicId || ''
+    });
+  };
+
+  const handleCertDeleteClick = async (cert) => {
+    if (!confirm(`Apakah Anda yakin ingin menghapus sertifikat "${cert.title}"?`)) return;
+    try {
+      await axios.delete(`${API}/certification/${cert.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchCertifications();
+    } catch (error) {
+      alert('Gagal menghapus sertifikat: ' + (error.response?.data?.error || error.message));
+    }
+  };
+
+  const resetCertForm = () => {
+    setEditingCert(null);
+    setCertForm({
+      title: '',
+      issuer: '',
+      issuedAt: '',
+      credentialUrl: '',
+      credentialId: '',
+      imageUrl: '',
+      imagePublicId: ''
+    });
+  };
+
   const handleContactSubmit = async (e) => {
     e.preventDefault();
     setSendingContact(true);
@@ -258,7 +374,7 @@ function App() {
           {/* Desktop Nav Items */}
           {view === 'public' ? (
             <div className="hidden md:flex items-center gap-6">
-              {['home', 'skills', 'projects', 'contact'].map((tab) => (
+              {['home', 'skills', 'projects', 'certification', 'contact'].map((tab) => (
                 <a
                   key={tab}
                   href={`#${tab}`}
@@ -268,7 +384,7 @@ function App() {
                     : 'text-brand-text-muted hover:text-brand-text'
                     }`}
                 >
-                  {tab === 'projects' ? 'Karya' : tab === 'home' ? 'Beranda' : tab === 'skills' ? 'Keahlian' : 'Kontak'}
+                  {tabLabels[tab]}
                 </a>
               ))}
             </div>
@@ -313,7 +429,7 @@ function App() {
         {mobileMenuOpen && (
           <div className="absolute top-20 left-4 right-4 z-40 p-5 rounded-2xl glass-card backdrop-blur-lg shadow-xl md:hidden flex flex-col gap-4">
             {view === 'public' ? (
-              ['home', 'skills', 'projects', 'contact'].map((tab) => (
+              ['home', 'skills', 'projects', 'certification', 'contact'].map((tab) => (
                 <a
                   key={tab}
                   href={`#${tab}`}
@@ -324,7 +440,7 @@ function App() {
                   className={`text-base font-bold capitalize transition-colors ${activeTab === tab ? 'text-brand-primary' : 'text-brand-text-muted'
                     }`}
                 >
-                  {tab === 'projects' ? 'Karya' : tab === 'home' ? 'Beranda' : tab === 'skills' ? 'Keahlian' : 'Kontak'}
+                  {tabLabels[tab]}
                 </a>
               ))
             ) : (
@@ -431,7 +547,7 @@ function App() {
 
                 {/* Backend Card */}
                 <div className="p-6 rounded-2xl glass-card text-left flex flex-col space-y-4">
-                  <div className="p-3 bg-brand-accent/10 text-brand-accent rounded-2xl w-fit glow-accent">
+                  <div className="p-3 bg-brand-primary/10 text-brand-primary rounded-2xl w-fit glow-primary">
                     <Database size={24} />
                   </div>
                   <h3 className="text-lg font-bold text-brand-text">Backend & Serverless</h3>
@@ -440,7 +556,7 @@ function App() {
                   </p>
                   <div className="flex flex-wrap gap-2 pt-2">
                     {['NodeJS', 'Laravel', 'MySQL', 'REST API'].map((skill) => (
-                      <span key={skill} className="text-xs font-semibold px-3 py-1 bg-brand-accent/10 text-brand-accent rounded-lg">
+                      <span key={skill} className="text-xs font-semibold px-3 py-1 bg-brand-primary/10 text-brand-primary rounded-lg">
                         {skill}
                       </span>
                     ))}
@@ -449,7 +565,7 @@ function App() {
 
                 {/* Cloud & Tools Card */}
                 <div className="p-6 rounded-2xl glass-card text-left flex flex-col space-y-4">
-                  <div className="p-3 bg-brand-secondary/10 text-brand-secondary rounded-2xl w-fit glow-secondary">
+                  <div className="p-3 bg-brand-primary/10 text-brand-primary rounded-2xl w-fit glow-primary">
                     <Cpu size={24} />
                   </div>
                   <h3 className="text-lg font-bold text-brand-text">Platform & Cloud</h3>
@@ -458,7 +574,7 @@ function App() {
                   </p>
                   <div className="flex flex-wrap gap-2 pt-2">
                     {['Git & GitHub', 'Aiven MySQL', 'Supabase', 'Vercel'].map((skill) => (
-                      <span key={skill} className="text-xs font-semibold px-3 py-1 bg-brand-secondary/10 text-brand-secondary rounded-lg">
+                      <span key={skill} className="text-xs font-semibold px-3 py-1 bg-brand-primary/10 text-brand-primary rounded-lg">
                         {skill}
                       </span>
                     ))}
@@ -498,7 +614,8 @@ function App() {
                           <img
                             src={project.imageUrl}
                             alt={project.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 cursor-zoom-in"
+                            onClick={() => setPreviewImage(project.imageUrl)}
                           />
                         ) : (
                           <div className="w-full h-full flex flex-col items-center justify-center text-brand-text-muted">
@@ -506,9 +623,6 @@ function App() {
                             <span className="text-xs mt-2">Tidak ada foto</span>
                           </div>
                         )}
-                        <span className="absolute top-3 right-3 px-2 py-1 bg-brand-bg/85 backdrop-blur text-[10px] font-bold text-brand-primary border border-brand-border rounded-md shadow">
-                          Proyek #{project.id}
-                        </span>
                       </div>
 
                       <div className="p-5 flex flex-col flex-grow text-left space-y-3">
@@ -534,7 +648,7 @@ function App() {
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-primary hover:text-brand-accent transition pt-3 w-fit"
                           >
-                            <span>Buka Live Demo</span>
+                            <span>Kunjungi Proyek</span>
                             <ExternalLink size={12} />
                           </a>
                         )}
@@ -545,7 +659,77 @@ function App() {
               )}
             </section>
 
-            {/* 4. CONTACT SECTION */}
+            {/* 4. CERTIFICATIONS SECTION */}
+            <section id="certification" className="space-y-12 scroll-mt-24">
+              <div className="text-center space-y-2">
+                <h2 className="text-3xl md:text-4xl font-extrabold text-brand-text">Sertifikasi & Penghargaan</h2>
+                <p className="text-brand-text-muted text-sm max-w-md mx-auto">
+                  Dokumen kompetensi dan keahlian yang telah divalidasi oleh institusi kredibel.
+                </p>
+              </div>
+
+              {certifications.length === 0 ? (
+                <div className="p-12 rounded-2xl border border-brand-border bg-brand-card text-center max-w-md mx-auto space-y-4">
+                  <Cpu size={36} className="mx-auto text-brand-text-muted animate-pulse" />
+                  <p className="font-bold text-brand-text text-lg">Sertifikat Belum Tersedia</p>
+                  <p className="text-xs text-brand-text-muted leading-relaxed">
+                    Belum ada data sertifikasi. Silakan masuk sebagai admin untuk mengunggah sertifikat Anda.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {certifications.map((cert) => (
+                    <div key={cert.id} className="rounded-2xl overflow-hidden glass-card flex flex-col group h-full shadow-md">
+                      <div className="relative aspect-[4/3] overflow-hidden border-b border-brand-border/30 bg-black/10">
+                        {cert.imageUrl ? (
+                          <img
+                            src={cert.imageUrl}
+                            alt={cert.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 cursor-zoom-in"
+                            onClick={() => setPreviewImage(cert.imageUrl)}
+                          />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center text-brand-text-muted bg-brand-bg/50">
+                            <Cpu size={36} className="text-brand-primary/40 animate-pulse" />
+                            <span className="text-xs mt-2">Sertifikat Digital</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="p-5 flex flex-col flex-grow text-left space-y-2">
+                        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded bg-brand-primary/10 text-brand-primary w-fit">
+                          {cert.issuer}
+                        </span>
+                        <h3 className="text-base font-bold text-brand-text leading-snug group-hover:text-brand-primary transition-colors">
+                          {cert.title}
+                        </h3>
+                        <p className="text-xs text-brand-text-muted leading-relaxed">
+                          Diterbitkan: {cert.issuedAt}
+                        </p>
+                        {cert.credentialId && (
+                          <p className="text-[10px] text-brand-text-muted font-mono leading-none">
+                            ID: {cert.credentialId}
+                          </p>
+                        )}
+                        {cert.credentialUrl && (
+                          <a
+                            href={cert.credentialUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs font-bold text-brand-primary hover:text-brand-accent transition pt-2 mt-auto w-fit"
+                          >
+                            <span>Lihat Kredensial</span>
+                            <ExternalLink size={12} />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {/* 5. CONTACT SECTION */}
             <section id="contact" className="space-y-12 scroll-mt-24">
               <div className="text-center space-y-2">
                 <h2 className="text-3xl md:text-4xl font-extrabold text-brand-text">Hubungi Saya</h2>
@@ -657,10 +841,10 @@ function App() {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-brand-border/40 pb-6">
               <div>
                 <h1 className="text-3xl font-extrabold text-brand-text m-0 tracking-tight">
-                  Manajemen Proyek Portofolio
+                  Manajemen Web Portofolio
                 </h1>
                 <p className="text-xs text-brand-text-muted mt-1 leading-relaxed">
-                  Tambah, ubah, atau hapus karya proyek yang ditampilkan di galeri publik.
+                  Tambah, ubah, atau hapus karya proyek dan data sertifikasi yang ditampilkan di galeri publik.
                 </p>
               </div>
               <button
@@ -672,155 +856,343 @@ function App() {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              {/* Form Input Proyek */}
-              <div className="lg:col-span-5 p-6 rounded-2xl glass-card h-fit space-y-4">
-                <div className="flex items-center gap-2 border-b border-brand-border/30 pb-3">
-                  <div className="p-2 bg-brand-primary/10 text-brand-primary rounded-xl">
-                    <Plus size={16} />
+            {/* Admin Switcher Tabs */}
+            <div className="flex border-b border-brand-border/30 gap-2">
+              <button
+                onClick={() => setAdminTab('projects')}
+                className={`px-5 py-2 text-sm font-bold border-b-2 transition-all cursor-pointer ${adminTab === 'projects'
+                    ? 'border-brand-primary text-brand-primary'
+                    : 'border-transparent text-brand-text-muted hover:text-brand-text'
+                  }`}
+              >
+                Manajemen Proyek
+              </button>
+              <button
+                onClick={() => setAdminTab('certifications')}
+                className={`px-5 py-2 text-sm font-bold border-b-2 transition-all cursor-pointer ${adminTab === 'certifications'
+                    ? 'border-brand-primary text-brand-primary'
+                    : 'border-transparent text-brand-text-muted hover:text-brand-text'
+                  }`}
+              >
+                Manajemen Sertifikasi
+              </button>
+            </div>
+
+            {adminTab === 'projects' ? (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                {/* Form Input Proyek */}
+                <div className="lg:col-span-5 p-6 rounded-2xl glass-card h-fit space-y-4">
+                  <div className="flex items-center gap-2 border-b border-brand-border/30 pb-3">
+                    <div className="p-2 bg-brand-primary/10 text-brand-primary rounded-xl">
+                      <Plus size={16} />
+                    </div>
+                    <h3 className="text-base font-bold text-brand-text">
+                      {editingProject ? 'Edit Data Proyek' : 'Tambah Proyek Baru'}
+                    </h3>
                   </div>
-                  <h3 className="text-base font-bold text-brand-text">
-                    {editingProject ? 'Edit Data Proyek' : 'Tambah Proyek Baru'}
-                  </h3>
+
+                  <form onSubmit={handleProjectSubmit} className="space-y-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-brand-text">Judul Proyek</label>
+                      <input
+                        type="text"
+                        required
+                        value={projectForm.title}
+                        onChange={(e) => setProjectForm({ ...projectForm, title: e.target.value })}
+                        placeholder="Masukkan nama proyek"
+                        className="w-full px-3 py-2 rounded-lg border border-brand-border bg-brand-bg/50 focus:outline-none focus:border-brand-primary text-xs"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-brand-text">Deskripsi</label>
+                      <textarea
+                        required
+                        rows={3}
+                        value={projectForm.description}
+                        onChange={(e) => setProjectForm({ ...projectForm, description: e.target.value })}
+                        placeholder="Tulis deskripsi proyek secara ringkas..."
+                        className="w-full px-3 py-2 rounded-lg border border-brand-border bg-brand-bg/50 focus:outline-none focus:border-brand-primary text-xs resize-none"
+                      />
+                    </div>
+
+                    {/* ImageUpload Integrated */}
+                    <ImageUpload
+                      onUpload={handleImageUpload}
+                      currentImage={projectForm.imageUrl}
+                      onRemove={handleImageRemove}
+                      isEdit={!!editingProject}
+                    />
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-brand-text">Teknologi (pisahkan dengan koma)</label>
+                      <input
+                        type="text"
+                        required
+                        value={projectForm.technologies}
+                        onChange={(e) => setProjectForm({ ...projectForm, technologies: e.target.value })}
+                        placeholder="React, TailwindCSS, MySQL, Express"
+                        className="w-full px-3 py-2 rounded-lg border border-brand-border bg-brand-bg/50 focus:outline-none focus:border-brand-primary text-xs"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-brand-text">Link Proyek / Demo URL</label>
+                      <input
+                        type="url"
+                        value={projectForm.projectUrl}
+                        onChange={(e) => setProjectForm({ ...projectForm, projectUrl: e.target.value })}
+                        placeholder="https://github.com/proyek-anda"
+                        className="w-full px-3 py-2 rounded-lg border border-brand-border bg-brand-bg/50 focus:outline-none focus:border-brand-primary text-xs"
+                      />
+                    </div>
+
+                    <div className="flex gap-2 pt-2">
+                      <button
+                        type="submit"
+                        disabled={formSubmitLoading}
+                        className="flex-1 py-2.5 rounded-lg bg-brand-primary text-white text-xs font-bold hover:bg-brand-accent transition disabled:opacity-50"
+                      >
+                        {formSubmitLoading ? 'Menyimpan...' : editingProject ? 'Update Proyek' : 'Simpan Proyek'}
+                      </button>
+                      {editingProject && (
+                        <button
+                          type="button"
+                          onClick={resetProjectForm}
+                          className="px-4 py-2.5 rounded-lg border border-brand-border bg-brand-card hover:bg-brand-bg text-brand-text text-xs font-bold"
+                        >
+                          Batal
+                        </button>
+                      )}
+                    </div>
+                  </form>
                 </div>
 
-                <form onSubmit={handleProjectSubmit} className="space-y-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-brand-text">Judul Proyek</label>
-                    <input
-                      type="text"
-                      required
-                      value={projectForm.title}
-                      onChange={(e) => setProjectForm({ ...projectForm, title: e.target.value })}
-                      placeholder="Masukkan nama proyek"
-                      className="w-full px-3 py-2 rounded-lg border border-brand-border bg-brand-bg/50 focus:outline-none focus:border-brand-primary text-xs"
-                    />
+                {/* Grid List Proyek Admin */}
+                <div className="lg:col-span-7 space-y-4">
+                  <h3 className="text-base font-bold text-brand-text flex items-center gap-2">
+                    <span>Daftar Proyek Terdaftar</span>
+                    <span className="text-xs font-semibold px-2 py-0.5 bg-brand-primary/10 text-brand-primary rounded-full">
+                      {projects.length}
+                    </span>
+                  </h3>
+
+                  {loading ? (
+                    <div className="flex justify-center items-center py-20">
+                      <div className="w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full animate-spin glow-primary"></div>
+                    </div>
+                  ) : projects.length === 0 ? (
+                    <div className="p-8 border border-brand-border rounded-xl bg-brand-card text-center text-brand-text-muted text-xs leading-relaxed">
+                      Belum ada data proyek. Silakan gunakan form untuk membuat proyek baru.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {projects.map((project) => (
+                        <div key={project.id} className="p-4 rounded-xl glass-card flex items-center justify-between gap-4 border border-brand-border/40 hover:translate-y-0 hover:shadow-sm">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-12 h-12 rounded-lg bg-black/10 overflow-hidden flex-shrink-0 border border-brand-border/40">
+                              {project.imageUrl ? (
+                                <img src={project.imageUrl} alt="" className="w-full h-full object-cover cursor-zoom-in" onClick={() => setPreviewImage(project.imageUrl)} />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-brand-text-muted"><ImageIcon size={16} /></div>
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <h4 className="text-sm font-bold text-brand-text truncate leading-tight">
+                                {project.title}
+                              </h4>
+                              <p className="text-[10px] text-brand-text-muted truncate mt-0.5">
+                                {project.technologies?.join(', ')}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => handleEditClick(project)}
+                              className="p-2 bg-brand-primary/10 text-brand-primary hover:bg-brand-primary hover:text-white rounded-lg transition"
+                              title="Edit proyek"
+                            >
+                              <Edit size={14} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(project)}
+                              className="p-2 bg-brand-accent/10 text-brand-accent hover:bg-brand-accent hover:text-white rounded-lg transition"
+                              title="Hapus proyek"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                {/* Form Input Sertifikat */}
+                <div className="lg:col-span-5 p-6 rounded-2xl glass-card h-fit space-y-4">
+                  <div className="flex items-center gap-2 border-b border-brand-border/30 pb-3">
+                    <div className="p-2 bg-brand-primary/10 text-brand-primary rounded-xl">
+                      <Plus size={16} />
+                    </div>
+                    <h3 className="text-base font-bold text-brand-text">
+                      {editingCert ? 'Edit Data Sertifikat' : 'Tambah Sertifikat Baru'}
+                    </h3>
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-brand-text">Deskripsi</label>
-                    <textarea
-                      rows={3}
-                      value={projectForm.description}
-                      onChange={(e) => setProjectForm({ ...projectForm, description: e.target.value })}
-                      placeholder="Tulis deskripsi proyek secara ringkas..."
-                      className="w-full px-3 py-2 rounded-lg border border-brand-border bg-brand-bg/50 focus:outline-none focus:border-brand-primary text-xs resize-none"
+                  <form onSubmit={handleCertSubmit} className="space-y-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-brand-text">Nama Sertifikat</label>
+                      <input
+                        type="text"
+                        required
+                        value={certForm.title}
+                        onChange={(e) => setCertForm({ ...certForm, title: e.target.value })}
+                        placeholder="Masukkan nama sertifikat"
+                        className="w-full px-3 py-2 rounded-lg border border-brand-border bg-brand-bg/50 focus:outline-none focus:border-brand-primary text-xs"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-brand-text">Penerbit (Issuer)</label>
+                      <input
+                        type="text"
+                        required
+                        value={certForm.issuer}
+                        onChange={(e) => setCertForm({ ...certForm, issuer: e.target.value })}
+                        placeholder="Google, Dicoding, Coursera, dll."
+                        className="w-full px-3 py-2 rounded-lg border border-brand-border bg-brand-bg/50 focus:outline-none focus:border-brand-primary text-xs"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-brand-text">Waktu Terbit</label>
+                      <input
+                        type="text"
+                        required
+                        value={certForm.issuedAt}
+                        onChange={(e) => setCertForm({ ...certForm, issuedAt: e.target.value })}
+                        placeholder="Desember 2025"
+                        className="w-full px-3 py-2 rounded-lg border border-brand-border bg-brand-bg/50 focus:outline-none focus:border-brand-primary text-xs"
+                      />
+                    </div>
+
+                    {/* ImageUpload Integrated for Certificate */}
+                    <ImageUpload
+                      onUpload={handleCertImageUpload}
+                      currentImage={certForm.imageUrl}
+                      onRemove={handleCertImageRemove}
+                      isEdit={!!editingCert}
+                      label="Gambar Sertifikat"
                     />
-                  </div>
 
-                  {/* ImageUpload Integrated */}
-                  <ImageUpload
-                    onUpload={handleImageUpload}
-                    currentImage={projectForm.imageUrl}
-                    onRemove={handleImageRemove}
-                    isEdit={!!editingProject}
-                  />
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-brand-text">ID Kredensial (Opsional)</label>
+                      <input
+                        type="text"
+                        value={certForm.credentialId}
+                        onChange={(e) => setCertForm({ ...certForm, credentialId: e.target.value })}
+                        placeholder="Masukkan ID sertifikat"
+                        className="w-full px-3 py-2 rounded-lg border border-brand-border bg-brand-bg/50 focus:outline-none focus:border-brand-primary text-xs"
+                      />
+                    </div>
 
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-brand-text">Teknologi (pisahkan dengan koma)</label>
-                    <input
-                      type="text"
-                      required
-                      value={projectForm.technologies}
-                      onChange={(e) => setProjectForm({ ...projectForm, technologies: e.target.value })}
-                      placeholder="React, TailwindCSS, MySQL, Express"
-                      className="w-full px-3 py-2 rounded-lg border border-brand-border bg-brand-bg/50 focus:outline-none focus:border-brand-primary text-xs"
-                    />
-                  </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-brand-text">Link Kredensial (URL)</label>
+                      <input
+                        type="url"
+                        value={certForm.credentialUrl}
+                        onChange={(e) => setCertForm({ ...certForm, credentialUrl: e.target.value })}
+                        placeholder="https://credential-link.com"
+                        className="w-full px-3 py-2 rounded-lg border border-brand-border bg-brand-bg/50 focus:outline-none focus:border-brand-primary text-xs"
+                      />
+                    </div>
 
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-brand-text">Link Proyek / Demo URL</label>
-                    <input
-                      type="url"
-                      value={projectForm.projectUrl}
-                      onChange={(e) => setProjectForm({ ...projectForm, projectUrl: e.target.value })}
-                      placeholder="https://github.com/proyek-anda"
-                      className="w-full px-3 py-2 rounded-lg border border-brand-border bg-brand-bg/50 focus:outline-none focus:border-brand-primary text-xs"
-                    />
-                  </div>
-
-                  <div className="flex gap-2 pt-2">
-                    <button
-                      type="submit"
-                      disabled={formSubmitLoading}
-                      className="flex-1 py-2.5 rounded-lg bg-brand-primary text-white text-xs font-bold hover:bg-brand-accent transition disabled:opacity-50"
-                    >
-                      {formSubmitLoading ? 'Menyimpan...' : editingProject ? 'Update Proyek' : 'Simpan Proyek'}
-                    </button>
-                    {editingProject && (
+                    <div className="flex gap-2 pt-2">
                       <button
-                        type="button"
-                        onClick={resetProjectForm}
-                        className="px-4 py-2.5 rounded-lg border border-brand-border bg-brand-card hover:bg-brand-bg text-brand-text text-xs font-bold"
+                        type="submit"
+                        disabled={formSubmitLoading}
+                        className="flex-1 py-2.5 rounded-lg bg-brand-primary text-white text-xs font-bold hover:bg-brand-accent transition disabled:opacity-50"
                       >
-                        Batal
+                        {formSubmitLoading ? 'Menyimpan...' : editingCert ? 'Update Sertifikat' : 'Simpan Sertifikat'}
                       </button>
-                    )}
-                  </div>
-                </form>
-              </div>
+                      {editingCert && (
+                        <button
+                          type="button"
+                          onClick={resetCertForm}
+                          className="px-4 py-2.5 rounded-lg border border-brand-border bg-brand-card hover:bg-brand-bg text-brand-text text-xs font-bold"
+                        >
+                          Batal
+                        </button>
+                      )}
+                    </div>
+                  </form>
+                </div>
 
-              {/* Grid List Proyek Admin */}
-              <div className="lg:col-span-7 space-y-4">
-                <h3 className="text-base font-bold text-brand-text flex items-center gap-2">
-                  <span>Daftar Proyek Terdaftar</span>
-                  <span className="text-xs font-semibold px-2 py-0.5 bg-brand-primary/10 text-brand-primary rounded-full">
-                    {projects.length}
-                  </span>
-                </h3>
+                {/* Grid List Sertifikat Admin */}
+                <div className="lg:col-span-7 space-y-4">
+                  <h3 className="text-base font-bold text-brand-text flex items-center gap-2">
+                    <span>Daftar Sertifikat Terdaftar</span>
+                    <span className="text-xs font-semibold px-2 py-0.5 bg-brand-primary/10 text-brand-primary rounded-full">
+                      {certifications.length}
+                    </span>
+                  </h3>
 
-                {loading ? (
-                  <div className="flex justify-center items-center py-20">
-                    <div className="w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full animate-spin glow-primary"></div>
-                  </div>
-                ) : projects.length === 0 ? (
-                  <div className="p-8 border border-brand-border rounded-xl bg-brand-card text-center text-brand-text-muted text-xs leading-relaxed">
-                    Belum ada data proyek. Silakan gunakan form untuk membuat proyek baru.
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {projects.map((project) => (
-                      <div key={project.id} className="p-4 rounded-xl glass-card flex items-center justify-between gap-4 border border-brand-border/40 hover:translate-y-0 hover:shadow-sm">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-12 h-12 rounded-lg bg-black/10 overflow-hidden flex-shrink-0 border border-brand-border/40">
-                            {project.imageUrl ? (
-                              <img src={project.imageUrl} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-brand-text-muted"><ImageIcon size={16} /></div>
-                            )}
+                  {loading ? (
+                    <div className="flex justify-center items-center py-20">
+                      <div className="w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full animate-spin glow-primary"></div>
+                    </div>
+                  ) : certifications.length === 0 ? (
+                    <div className="p-8 border border-brand-border rounded-xl bg-brand-card text-center text-brand-text-muted text-xs leading-relaxed">
+                      Belum ada data sertifikasi. Silakan gunakan form untuk menambahkan sertifikat baru.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {certifications.map((cert) => (
+                        <div key={cert.id} className="p-4 rounded-xl glass-card flex items-center justify-between gap-4 border border-brand-border/40 hover:translate-y-0 hover:shadow-sm">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-12 h-12 rounded-lg bg-black/10 overflow-hidden flex-shrink-0 border border-brand-border/40">
+                              {cert.imageUrl ? (
+                                <img src={cert.imageUrl} alt="" className="w-full h-full object-cover cursor-zoom-in" onClick={() => setPreviewImage(cert.imageUrl)} />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-brand-text-muted"><Cpu size={16} /></div>
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <h4 className="text-sm font-bold text-brand-text truncate leading-tight">
+                                {cert.title}
+                              </h4>
+                              <p className="text-[10px] text-brand-text-muted truncate mt-0.5">
+                                {cert.issuer} • {cert.issuedAt}
+                              </p>
+                            </div>
                           </div>
-                          <div className="min-w-0">
-                            <h4 className="text-sm font-bold text-brand-text truncate leading-tight">
-                              {project.title}
-                            </h4>
-                            <p className="text-[10px] text-brand-text-muted truncate mt-0.5">
-                              {project.technologies?.join(', ')}
-                            </p>
+
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => handleCertEditClick(cert)}
+                              className="p-2 bg-brand-primary/10 text-brand-primary hover:bg-brand-primary hover:text-white rounded-lg transition"
+                              title="Edit sertifikat"
+                            >
+                              <Edit size={14} />
+                            </button>
+                            <button
+                              onClick={() => handleCertDeleteClick(cert)}
+                              className="p-2 bg-brand-accent/10 text-brand-accent hover:bg-brand-accent hover:text-white rounded-lg transition"
+                              title="Hapus sertifikat"
+                            >
+                              <Trash2 size={14} />
+                            </button>
                           </div>
                         </div>
-
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            onClick={() => handleEditClick(project)}
-                            className="p-2 bg-brand-primary/10 text-brand-primary hover:bg-brand-primary hover:text-white rounded-lg transition"
-                            title="Edit proyek"
-                          >
-                            <Edit size={14} />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteClick(project)}
-                            className="p-2 bg-brand-accent/10 text-brand-accent hover:bg-brand-accent hover:text-white rounded-lg transition"
-                            title="Hapus proyek"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </section>
         )}
 
@@ -910,6 +1282,30 @@ function App() {
           </div>
         </div>
       </footer>
+
+      {/* Image Preview Modal */}
+      {previewImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm transition-opacity duration-300 cursor-zoom-out"
+          onClick={() => setPreviewImage(null)}
+        >
+          <div className="relative max-w-4xl max-h-[90vh] w-full flex items-center justify-center">
+            <button
+              onClick={(e) => { e.stopPropagation(); setPreviewImage(null); }}
+              className="absolute -top-12 right-0 text-white hover:text-brand-primary transition bg-black/50 p-2 rounded-full cursor-pointer"
+              title="Tutup"
+            >
+              <X size={24} />
+            </button>
+            <img
+              src={previewImage}
+              alt="Preview Besar"
+              className="max-w-full max-h-[80vh] rounded-xl object-contain shadow-2xl border border-white/10"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

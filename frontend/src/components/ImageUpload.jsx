@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { Upload, X, Image as ImageIcon, CheckCircle } from 'lucide-react';
 
-const ImageUpload = ({ onUpload, currentImage, onRemove, isEdit }) => {
+const ImageUpload = ({ onUpload, currentImage, onRemove, isEdit, label = "Gambar Proyek" }) => {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState(currentImage || '');
   const [progress, setProgress] = useState(0);
@@ -113,7 +113,7 @@ const ImageUpload = ({ onUpload, currentImage, onRemove, isEdit }) => {
   return (
     <div className="space-y-3">
       <label className="block text-sm font-semibold tracking-wide text-brand-text">
-        Gambar Proyek
+        {label}
       </label>
       
       <div 

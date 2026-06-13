@@ -310,6 +310,167 @@ router.delete('/portfolio/:id', authMiddleware, async (req, res) => {
   }
 });
 
+// ============ CERTIFICATION CRUD ============
+
+// Get all certifications (public)
+router.get('/certification', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('porto_certifications')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    const certifications = data.map(c => ({
+      id: c.id,
+      title: c.title,
+      issuer: c.issuer,
+      issuedAt: c.issued_at,
+      credentialUrl: c.credential_url,
+      credentialId: c.credential_id,
+      imageUrl: c.image_url,
+      imagePublicId: c.image_name,
+      createdAt: c.created_at,
+    }));
+    res.json(certifications);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error: ' + err.message });
+  }
+});
+
+// Create certification (admin only)
+router.post('/certification', authMiddleware, async (req, res) => {
+  const { title, issuer, issuedAt, credentialUrl, credentialId, imageUrl, imagePublicId } = req.body;
+  try {
+    const { data, error } = await supabase
+      .from('porto_certifications')
+      .insert([
+        {
+          title,
+          issuer,
+          issued_at: issuedAt,
+          credential_url: credentialUrl,
+          credential_id: credentialId,
+          image_url: imageUrl,
+          image_name: imagePublicId || null,
+        }
+      ])
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    const cert = data;
+    res.json({
+      id: cert.id,
+      title: cert.title,
+      issuer: cert.issuer,
+      issuedAt: cert.issued_at,
+      credentialUrl: cert.credential_url,
+      credentialId: cert.credential_id,
+      imageUrl: cert.image_url,
+      imagePublicId: cert.image_name,
+      createdAt: cert.created_at,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error: ' + err.message });
+  }
+});
+
+// Update certification (admin only)
+router.put('/certification/:id', authMiddleware, async (req, res) => {
+  const { id } = req.params;
+  const { title, issuer, issuedAt, credentialUrl, credentialId, imageUrl, imagePublicId } = req.body;
+  try {
+    if (imagePublicId) {
+      const { data: oldData, error: oldError } = await supabase
+        .from('porto_certifications')
+        .select('image_name')
+        .eq('id', id)
+        .single();
+      
+      if (!oldError && oldData?.image_name && oldData.image_name !== imagePublicId) {
+        await supabase.storage
+          .from(SUPABASE_BUCKET)
+          .remove([oldData.image_name]);
+      }
+    }
+
+    const { data, error } = await supabase
+      .from('porto_certifications')
+      .update({
+        title,
+        issuer,
+        issued_at: issuedAt,
+        credential_url: credentialUrl,
+        credential_id: credentialId,
+        image_url: imageUrl,
+        image_name: imagePublicId || null,
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    const cert = data;
+    res.json({
+      id: cert.id,
+      title: cert.title,
+      issuer: cert.issuer,
+      issuedAt: cert.issued_at,
+      credentialUrl: cert.credential_url,
+      credentialId: cert.credential_id,
+      imageUrl: cert.image_url,
+      imagePublicId: cert.image_name,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error: ' + err.message });
+  }
+});
+
+// Delete certification (admin only)
+router.delete('/certification/:id', authMiddleware, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const { data: oldData, error: oldError } = await supabase
+      .from('porto_certifications')
+      .select('image_name')
+      .eq('id', id)
+      .single();
+
+    if (!oldError && oldData?.image_name) {
+      await supabase.storage
+        .from(SUPABASE_BUCKET)
+        .remove([oldData.image_name]);
+    }
+
+    const { error } = await supabase
+      .from('porto_certifications')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw error;
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error: ' + err.message });
+  }
+});
+
 // Auth login endpoint
 router.post('/auth/login', async (req, res) => {
   const { username, password } = req.body;
