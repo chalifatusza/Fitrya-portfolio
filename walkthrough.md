@@ -104,6 +104,6 @@ You can run both the frontend and backend servers concurrently on your machine:
 1. Open the website.
 2. Scroll down to the footer, click the discrete lock icon (`🔒`) in the bottom-right corner, or navigate directly to `#auth` in the URL hash (e.g., `http://localhost:5173/#auth`).
 3. Enter the default credentials:
-   - **Username**: `admin`
-   - **Password**: `admin123`
+   - **Username**: `Fitrya`
+   - **Password**: `Fitrya11`
 4. The default account is auto-created on first database access. Once logged in, you can add, edit, and delete projects, and upload images directly to Supabase!

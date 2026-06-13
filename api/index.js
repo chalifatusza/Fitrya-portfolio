@@ -31,7 +31,7 @@ const ensureDefaultAdmin = async () => {
     const { data, error } = await supabase
       .from('porto_admins')
       .select('*')
-      .eq('username', 'admin')
+      .eq('username', 'Fitrya')
       .limit(1);
 
     if (error) {
@@ -40,15 +40,15 @@ const ensureDefaultAdmin = async () => {
     }
 
     if (!data || data.length === 0) {
-      const hashedPassword = await bcrypt.hash('admin123', 10);
+      const hashedPassword = await bcrypt.hash('Fitrya11', 10);
       const { error: insertError } = await supabase
         .from('porto_admins')
-        .insert([{ username: 'admin', password: hashedPassword }]);
+        .insert([{ username: 'Fitrya', password: hashedPassword }]);
 
       if (insertError) {
         console.error('Error creating default admin:', insertError);
       } else {
-        console.log('Default admin created: admin/admin123');
+        console.log('Default admin created: Fitrya/Fitrya11');
       }
     }
   } catch (err) {

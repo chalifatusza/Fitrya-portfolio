@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { 
-  Sun, Moon, Lock, LogOut, Plus, Trash2, Edit, ExternalLink, 
-  Github, Linkedin, Mail, ArrowRight, Menu, X, Code, Database, 
+import {
+  Sun, Moon, Lock, LogOut, Plus, Trash2, Edit, ExternalLink,
+  Github, Linkedin, Mail, ArrowRight, Menu, X, Code, Database,
   Cpu, Sparkles, Send, FolderGit, AlertCircle
 } from 'lucide-react';
 import InteractiveBackground from './components/InteractiveBackground';
@@ -235,11 +235,8 @@ function App() {
       <header className="sticky top-0 z-50 w-full px-4 py-3 md:px-8">
         <nav className="max-w-6xl mx-auto flex items-center justify-between p-4 rounded-2xl glass-card backdrop-blur-md shadow-lg">
           <div className="flex items-center gap-2 font-black text-xl tracking-tight cursor-pointer" onClick={() => { setView('public'); window.location.hash = ''; }}>
-            <span className="p-2 bg-gradient-to-r from-brand-primary to-brand-accent text-white rounded-xl shadow-md">
-              <Sparkles size={20} />
-            </span>
             <span className="bg-gradient-to-r from-brand-primary to-brand-accent bg-clip-text text-transparent">
-              MyPorto
+              Fitrya's Portfolio
             </span>
           </div>
 
@@ -251,11 +248,10 @@ function App() {
                   key={tab}
                   href={`#${tab}`}
                   onClick={() => setActiveTab(tab)}
-                  className={`text-sm font-semibold capitalize tracking-wide transition-colors ${
-                    activeTab === tab 
-                      ? 'text-brand-primary border-b-2 border-brand-primary pb-1' 
-                      : 'text-brand-text-muted hover:text-brand-text'
-                  }`}
+                  className={`text-sm font-semibold capitalize tracking-wide transition-colors ${activeTab === tab
+                    ? 'text-brand-primary border-b-2 border-brand-primary pb-1'
+                    : 'text-brand-text-muted hover:text-brand-text'
+                    }`}
                 >
                   {tab === 'projects' ? 'Karya' : tab === 'home' ? 'Beranda' : tab === 'skills' ? 'Keahlian' : 'Kontak'}
                 </a>
@@ -310,9 +306,8 @@ function App() {
                     setActiveTab(tab);
                     setMobileMenuOpen(false);
                   }}
-                  className={`text-base font-bold capitalize transition-colors ${
-                    activeTab === tab ? 'text-brand-primary' : 'text-brand-text-muted'
-                  }`}
+                  className={`text-base font-bold capitalize transition-colors ${activeTab === tab ? 'text-brand-primary' : 'text-brand-text-muted'
+                    }`}
                 >
                   {tab === 'projects' ? 'Karya' : tab === 'home' ? 'Beranda' : tab === 'skills' ? 'Keahlian' : 'Kontak'}
                 </a>
@@ -340,25 +335,36 @@ function App() {
 
       {/* MAIN CONTENT AREA */}
       <main className="flex-grow max-w-6xl mx-auto w-full px-4 py-8 md:py-16 relative z-10 space-y-24">
-        
+
         {view === 'public' ? (
           <>
             {/* 1. HERO SECTION */}
             <section id="home" className="min-h-[70vh] flex flex-col justify-center items-center text-center space-y-6 md:space-y-8 pt-10">
+
+              {/* Profile Image with Glowing Border */}
+              <div className="relative group w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden p-1 bg-gradient-to-tr from-brand-primary to-brand-accent shadow-2xl glow-primary transition-transform duration-500 hover:scale-105">
+                <div className="w-full h-full rounded-full overflow-hidden border-2 border-brand-bg bg-brand-card">
+                  <img
+                    src="/profile.jpg"
+                    alt="Fitrya"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              </div>
+
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-brand-border bg-brand-card/60 backdrop-blur shadow-sm text-xs font-bold text-brand-primary interactive-glow">
-                <Sparkles size={14} className="text-brand-primary" />
-                <span>Selamat Datang di Portofolio Kreatif</span>
+                <span>Selamat Datang di Portofolio Fitrya</span>
               </div>
 
               <h1 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight leading-none text-brand-text max-w-4xl">
-                Mendesain Solusi Digital Antara{' '}
+                Junior Developer in{' '}
                 <span className="bg-gradient-to-r from-brand-primary via-brand-secondary to-brand-accent bg-clip-text text-transparent">
-                  Langit & Samudra
+                  Web & App Development
                 </span>
               </h1>
 
               <p className="text-base sm:text-xl text-brand-text-muted max-w-2xl leading-relaxed">
-                Halo, saya pengembang web profesional yang menggabungkan keindahan frontend interaktif dan kekuatan backend serverless untuk mewujudkan visualisasi terbaik Anda.
+                Halo, saya Fitrya Chalifatus Zahro. Mahasiswa Universitas Negeri Surabaya yang memiliki ketertarikan tinggi di dunia IT. Saya seorang Junior Developer yang masih perlu belajar banyak hal.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center gap-4 pt-4">
@@ -385,7 +391,7 @@ function App() {
               <div className="text-center space-y-2">
                 <h2 className="text-3xl md:text-4xl font-extrabold text-brand-text">Keahlian Teknologi</h2>
                 <p className="text-brand-text-muted text-sm max-w-md mx-auto">
-                  Perpaduan teknologi yang saya kuasai untuk membangun aplikasi web modern berskala penuh.
+                  Perpaduan teknologi yang saya kuasai untuk membangun mengembangkan web dan mobile app.
                 </p>
               </div>
 
@@ -397,10 +403,10 @@ function App() {
                   </div>
                   <h3 className="text-lg font-bold text-brand-text">Frontend Development</h3>
                   <p className="text-xs text-brand-text-muted leading-relaxed">
-                    Pengalaman mendesain interface interaktif, berkinerja tinggi, dan responsif menggunakan framework dan styling modern.
+                    Pengalaman mendesain interface interaktif dan responsif menggunakan framework dan styling modern.
                   </p>
                   <div className="flex flex-wrap gap-2 pt-2">
-                    {['React', 'JavaScript', 'HTML5', 'CSS3', 'TailwindCSS', 'Vite'].map((skill) => (
+                    {['JavaScript', 'HTML5', 'CSS3', 'TailwindCSS'].map((skill) => (
                       <span key={skill} className="text-xs font-semibold px-3 py-1 bg-brand-primary/10 text-brand-primary rounded-lg">
                         {skill}
                       </span>
@@ -415,10 +421,10 @@ function App() {
                   </div>
                   <h3 className="text-lg font-bold text-brand-text">Backend & Serverless</h3>
                   <p className="text-xs text-brand-text-muted leading-relaxed">
-                    Membangun REST API fungsional dan terdistribusi aman menggunakan serverless functions, database relasional, dan file storage CDN.
+                    Membangun REST API fungsional dan terdistribusi secara aman dan nyaman.
                   </p>
                   <div className="flex flex-wrap gap-2 pt-2">
-                    {['NodeJS', 'Express', 'MySQL', 'REST API', 'Netlify Functions', 'Bcrypt/JWT'].map((skill) => (
+                    {['NodeJS', 'Laravel', 'MySQL', 'REST API'].map((skill) => (
                       <span key={skill} className="text-xs font-semibold px-3 py-1 bg-brand-accent/10 text-brand-accent rounded-lg">
                         {skill}
                       </span>
@@ -433,10 +439,10 @@ function App() {
                   </div>
                   <h3 className="text-lg font-bold text-brand-text">Platform & Cloud</h3>
                   <p className="text-xs text-brand-text-muted leading-relaxed">
-                    Mengoptimasi hosting aplikasi statis/dinamis, manajemen media CDN, repositori Git, dan proses CI/CD deployment.
+                    Mengoptimasi hosting aplikasi statis/dinamis, repositori Git, dan proses CI/CD deployment.
                   </p>
                   <div className="flex flex-wrap gap-2 pt-2">
-                    {['Cloudinary CDN', 'Netlify Cloud', 'Git & GitHub', 'Postman', 'Aiven MySQL', 'Vercel'].map((skill) => (
+                    {['Git & GitHub', 'Aiven MySQL', 'Supabase', 'Vercel'].map((skill) => (
                       <span key={skill} className="text-xs font-semibold px-3 py-1 bg-brand-text-muted/10 text-brand-text rounded-lg">
                         {skill}
                       </span>
@@ -451,7 +457,7 @@ function App() {
               <div className="text-center space-y-2">
                 <h2 className="text-3xl md:text-4xl font-extrabold text-brand-text">Karya & Proyek Terpilih</h2>
                 <p className="text-brand-text-muted text-sm max-w-md mx-auto">
-                  Galeri proyek yang telah saya selesaikan dengan fokus kualitas kode dan keindahan visual.
+                  Galeri proyek yang telah saya selesaikan.
                 </p>
               </div>
 
@@ -474,9 +480,9 @@ function App() {
                     <div key={project.id} className="rounded-2xl overflow-hidden glass-card flex flex-col group h-full shadow-md">
                       <div className="relative aspect-video overflow-hidden border-b border-brand-border/30 bg-black/10">
                         {project.imageUrl ? (
-                          <img 
-                            src={project.imageUrl} 
-                            alt={project.title} 
+                          <img
+                            src={project.imageUrl}
+                            alt={project.title}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           />
                         ) : (
@@ -539,25 +545,25 @@ function App() {
                   <p className="text-xs text-brand-text-muted leading-relaxed">
                     Saya terbuka untuk mendiskusikan peluang proyek lepas, posisi penuh waktu, atau kolaborasi open-source.
                   </p>
-                  
+
                   <div className="space-y-4 pt-2">
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-brand-primary/10 text-brand-primary rounded-xl">
                         <Mail size={16} />
                       </div>
-                      <span className="text-xs font-medium text-brand-text">your.email@example.com</span>
+                      <span className="text-xs font-medium text-brand-text">chalifatuszahro@gmail.com</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-brand-primary/10 text-brand-primary rounded-xl">
                         <Github size={16} />
                       </div>
-                      <span className="text-xs font-medium text-brand-text">github.com/username</span>
+                      <span className="text-xs font-medium text-brand-text">github.com/chalifatusza</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-brand-primary/10 text-brand-primary rounded-xl">
                         <Linkedin size={16} />
                       </div>
-                      <span className="text-xs font-medium text-brand-text">linkedin.com/in/username</span>
+                      <span className="text-xs font-medium text-brand-text">linkedin.com/in/fitrya-chalifatus</span>
                     </div>
                   </div>
                 </div>
@@ -677,7 +683,7 @@ function App() {
                   </div>
 
                   {/* ImageUpload Integrated */}
-                  <ImageUpload 
+                  <ImageUpload
                     onUpload={handleImageUpload}
                     currentImage={projectForm.imageUrl}
                     onRemove={handleImageRemove}
@@ -798,7 +804,7 @@ function App() {
       {showLogin && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm transition-opacity duration-300">
           <div className="w-full max-w-sm p-6 rounded-2xl glass-card shadow-2xl space-y-4 relative border border-brand-border/50 animate-fade-in text-left">
-            <button 
+            <button
               onClick={() => { setShowLogin(false); window.location.hash = ''; }}
               className="absolute top-4 right-4 text-brand-text hover:text-brand-accent transition"
             >
@@ -862,14 +868,14 @@ function App() {
       <footer className="w-full border-t border-brand-border/30 px-4 py-8 md:px-8 bg-brand-card/35 backdrop-blur z-10">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-brand-text-muted">
           <div>
-            © 2026 MyPorto. Dikembangkan dengan ❤️ di bawah langit & samudra.
+            Made with ❤️ by Fitrya.
           </div>
           <div className="flex items-center gap-4">
-            <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="hover:text-brand-primary transition">GitHub</a>
-            <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="hover:text-brand-primary transition">LinkedIn</a>
+            <a href="https://github.com/chalifatusza" target="_blank" rel="noopener noreferrer" className="hover:text-brand-primary transition">GitHub</a>
+            <a href="https://linkedin.com/in/fitrya-chalifatus" target="_blank" rel="noopener noreferrer" className="hover:text-brand-primary transition">LinkedIn</a>
             {/* Discrete Footer Link to Auth Route for Owners */}
-            <a 
-              href="#auth" 
+            <a
+              href="#auth"
               className="text-brand-border/50 hover:text-brand-primary transition font-bold"
               title="Admin access"
             >
