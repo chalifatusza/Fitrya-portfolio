@@ -491,22 +491,6 @@ const InteractiveBackground = () => {
         ctx.lineTo(pad.x + tickR - tickLen, pad.y);
         ctx.stroke();
 
-        // Telemetry details text
-        const textX = mouse.x + 16;
-        const textY = mouse.y + 14;
-        ctx.font = '8.5px monospace';
-        ctx.fillStyle = `${hudColor}0.75)`;
-        ctx.textAlign = 'left';
-
-        // Voltages and status update dynamically based on pad active states
-        const volt = pad.glowLevel > 0.1 ? (pad.voltage * 1.05).toFixed(2) : pad.voltage.toFixed(1);
-        const status = pad.glowLevel > 0.4 ? 'ACTIVE' : pad.glowLevel > 0.05 ? 'PULSING' : 'STANDBY';
-        const freq = status === 'STANDBY' ? '0.00' : (pad.frequency * (pad.glowLevel * 0.4 + 0.8)).toFixed(2);
-
-        ctx.fillText(`PROBE TARGET: ${pad.name}`, textX, textY);
-        ctx.fillText(`VOLTAGE: ${volt}V [${status}]`, textX, textY + 11);
-        ctx.fillText(`FREQ: ${freq} MHz`, textX, textY + 22);
-        ctx.fillText(`COORD X:${Math.round(pad.x)} Y:${Math.round(pad.y)}`, textX, textY + 33);
       }
 
       animationFrameId = requestAnimationFrame(animate);
