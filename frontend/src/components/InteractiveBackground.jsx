@@ -14,18 +14,8 @@ const InteractiveBackground = () => {
     let width = (canvas.width = window.innerWidth);
     let height = (canvas.height = window.innerHeight);
 
-    // Tech names to display on PCB pads
-    const techSkills = [
-      'Flutter', 'NodeJS', 'MySQL', 'Tailwind', 'JavaScript',
-      'HTML', 'CSS', 'Aiven MySQL', 'Supabase', 'Vercel', 'Git'
-    ];
-
     // Configuration
-    const pinLen = 7;
-    const pinW = 3;
-
-    // Component arrays
-    let chips = [];
+    const padRadius = 4.5;
     let pads = [];
     let traces = [];
     let pulses = [];
@@ -43,36 +33,33 @@ const InteractiveBackground = () => {
     // Helper to calculate Euclidean distance
     const getDistance = (x1, y1, x2, y2) => Math.hypot(x2 - x1, y2 - y1);
 
-    // Helper to generate orthogonal PCB routing paths with 45-degree chamfers
-    const getOrthogonalPath = (x1, y1, x2, y2, side) => {
+    // Helper to generate orthogonal PCB routing paths with 45-degree chamfers between two pads
+    const getPCBPath = (x1, y1, x2, y2) => {
       const path = [{ x: x1, y: y1 }];
 
-      // Pin breakout extension (draw trace straight out from pin tip first)
-      let breakX = x1;
-      let breakY = y1;
-      const breakoutDist = 12;
+      const dx = x2 - x1;
+      const dy = y2 - y1;
 
-      if (side === 'left') breakX -= breakoutDist;
-      else if (side === 'right') breakX += breakoutDist;
-      else if (side === 'top') breakY -= breakoutDist;
-      else if (side === 'bottom') breakY += breakoutDist;
+      // Direct line if differences are too small
+      if (Math.abs(dx) < 15 && Math.abs(dy) < 15) {
+        path.push({ x: x2, y: y2 });
+        return path;
+      }
 
-      path.push({ x: breakX, y: breakY });
+      // Determine routing corner structure (horizontal first or vertical first)
+      const preferHorizontal = Math.abs(dx) > Math.abs(dy);
+      const cornerX = preferHorizontal ? x2 : x1;
+      const cornerY = preferHorizontal ? y1 : y2;
 
-      // Determine routing corners
-      const preferHorizontal = (side === 'left' || side === 'right');
-      const cornerX = preferHorizontal ? x2 : breakX;
-      const cornerY = preferHorizontal ? breakY : y2;
-
-      // Apply 45-degree chamfer to the corner to mimic real PCB tracks
+      // Apply 45-degree chamfer to the corner
       const chamfer = 12;
-      const dx1 = Math.sign(cornerX - breakX);
-      const dy1 = Math.sign(cornerY - breakY);
+      const dx1 = Math.sign(cornerX - x1);
+      const dy1 = Math.sign(cornerY - y1);
       const dx2 = Math.sign(x2 - cornerX);
       const dy2 = Math.sign(y2 - cornerY);
 
-      const d1 = Math.abs(preferHorizontal ? (cornerX - breakX) : (cornerY - breakY));
-      const d2 = Math.abs(preferHorizontal ? (y2 - cornerY) : (x2 - cornerX));
+      const d1 = Math.abs(preferHorizontal ? dx : dy);
+      const d2 = Math.abs(preferHorizontal ? dy : dx);
 
       if (d1 > chamfer * 2 && d2 > chamfer * 2) {
         const turn1 = {
@@ -93,264 +80,98 @@ const InteractiveBackground = () => {
       return path;
     };
 
-    // Helper to generate pins for IC chip packages
-    const generatePins = (cx, cy, w, h, style) => {
-      const pins = [];
-      const edgePadding = 12;
-
-      const addPinsOnSide = (side, count) => {
-        for (let i = 0; i < count; i++) {
-          const t = count > 1 ? i / (count - 1) : 0.5;
-          let px, py;
-
-          if (side === 'left') {
-            px = cx - w / 2 - pinLen;
-            py = cy - h / 2 + edgePadding + t * (h - edgePadding * 2);
-          } else if (side === 'right') {
-            px = cx + w / 2 + pinLen;
-            py = cy - h / 2 + edgePadding + t * (h - edgePadding * 2);
-          } else if (side === 'top') {
-            px = cx - w / 2 + edgePadding + t * (w - edgePadding * 2);
-            py = cy - h / 2 - pinLen;
-          } else if (side === 'bottom') {
-            px = cx - w / 2 + edgePadding + t * (w - edgePadding * 2);
-            py = cy + h / 2 + pinLen;
-          }
-
-          pins.push({ x: px, y: py, side });
-        }
-      };
-
-      if (style === 'QFP') {
-        // Quad Flat Package (Pins on all 4 sides)
-        addPinsOnSide('left', 6);
-        addPinsOnSide('right', 6);
-        addPinsOnSide('top', 6);
-        addPinsOnSide('bottom', 6);
-      } else {
-        // DIP (Pins on left and right sides)
-        addPinsOnSide('left', 6);
-        addPinsOnSide('right', 6);
-      }
-
-      return pins;
-    };
-
-    // Main layout config based on screen size
+    // Setup board elements responsively
     const setupBoard = () => {
       width = canvas.width = window.innerWidth;
       height = canvas.height = window.innerHeight;
       const isMobile = width < 768;
 
-      chips = [];
       pads = [];
       traces = [];
       pulses = [];
       scheduledPulses = [];
       shockwaves = [];
 
-      // 1. Position IC Chips
-      if (isMobile) {
-        chips.push({
-          id: 1,
-          name: 'MCU-CORE',
-          cx: width * 0.5,
-          cy: height * 0.45,
-          w: 80,
-          h: 80,
-          style: 'DIP',
-          pins: []
-        });
-      } else {
-        chips.push({
-          id: 1,
-          name: 'TECH-CORE',
-          cx: width * 0.25,
-          cy: height * 0.35,
-          w: 120,
-          h: 120,
-          style: 'QFP',
-          pins: []
-        });
-        chips.push({
-          id: 2,
-          name: 'DATA-MCU',
-          cx: width * 0.75,
-          cy: height * 0.65,
-          w: 100,
-          h: 130,
-          style: 'DIP',
-          pins: []
-        });
-        chips.push({
-          id: 3,
-          name: 'CLK-IO',
-          cx: width * 0.8,
-          cy: height * 0.22,
-          w: 80,
-          h: 80,
-          style: 'DIP',
-          pins: []
-        });
-      }
+      // 1. Generate via pads snapped to a grid
+      const padCount = isMobile ? 18 : 45;
+      const step = 50;
+      const border = 60;
 
-      // 2. Generate chip pins
-      chips.forEach((chip) => {
-        chip.pins = generatePins(chip.cx, chip.cy, chip.w, chip.h, chip.style);
-      });
+      // Place nodes
+      let attempts = 0;
+      while (pads.length < padCount && attempts < 250) {
+        attempts++;
+        const gridX = Math.floor((Math.random() * (width - border * 2) + border) / step) * step;
+        const gridY = Math.floor((Math.random() * (height - border * 2) + border) / step) * step;
 
-      // 3. Position Skill Pads (Vias)
-      const desktopCoords = {
-        'Flutter': { x: 0.1, y: 0.6 },
-        'NodeJS': { x: 0.4, y: 0.8 },
-        'MySQL': { x: 0.9, y: 0.45 },
-        'Tailwind': { x: 0.48, y: 0.55 },
-        'JavaScript': { x: 0.4, y: 0.15 },
-        'HTML': { x: 0.58, y: 0.85 },
-        'CSS': { x: 0.72, y: 0.85 },
-        'Aiven MySQL': { x: 0.92, y: 0.62 },
-        'Supabase': { x: 0.68, y: 0.18 },
-        'Vercel': { x: 0.88, y: 0.8 },
-        'Git': { x: 0.12, y: 0.18 }
-      };
-
-      const mobileCoords = {
-        'Flutter': { x: 0.25, y: 0.22 },
-        'NodeJS': { x: 0.25, y: 0.7 },
-        'MySQL': { x: 0.75, y: 0.58 },
-        'Tailwind': { x: 0.75, y: 0.3 },
-        'JavaScript': { x: 0.5, y: 0.13 },
-        'HTML': { x: 0.25, y: 0.85 },
-        'CSS': { x: 0.5, y: 0.85 },
-        'Aiven MySQL': { x: 0.75, y: 0.85 },
-        'Supabase': { x: 0.75, y: 0.18 },
-        'Vercel': { x: 0.75, y: 0.72 },
-        'Git': { x: 0.25, y: 0.32 }
-      };
-
-      const coords = isMobile ? mobileCoords : desktopCoords;
-
-      techSkills.forEach((skill, index) => {
-        const c = coords[skill] || { x: 0.5, y: 0.5 };
-        pads.push({
-          id: index,
-          x: c.x * width,
-          y: c.y * height,
-          label: skill,
-          radius: 6,
-          glowLevel: 0,
-          isSkill: true
-        });
-      });
-
-      // 4. Generate decorative via pads (populate empty board grid)
-      const viaCount = isMobile ? 8 : 22;
-      for (let i = 0; i < viaCount; i++) {
-        const step = 40;
-        const gridX = Math.floor((Math.random() * (width - 100) + 50) / step) * step;
-        const gridY = Math.floor((Math.random() * (height - 100) + 50) / step) * step;
-
-        // Ensure vias do not overlap chip bodies
-        let overlaps = false;
-        chips.forEach((chip) => {
-          const buffer = 35;
-          if (
-            gridX > chip.cx - chip.w / 2 - buffer &&
-            gridX < chip.cx + chip.w / 2 + buffer &&
-            gridY > chip.cy - chip.h / 2 - buffer &&
-            gridY < chip.cy + chip.h / 2 + buffer
-          ) {
-            overlaps = true;
+        // Verify min distance between pads to prevent overlapping clusters
+        let tooClose = false;
+        for (let i = 0; i < pads.length; i++) {
+          if (getDistance(gridX, gridY, pads[i].x, pads[i].y) < 75) {
+            tooClose = true;
+            break;
           }
-        });
+        }
 
-        if (!overlaps) {
+        if (!tooClose) {
+          // Dynamic telemetry specs for tech diagnostic probe feel
+          const baseVoltage = [1.8, 3.3, 5.0][Math.floor(Math.random() * 3)];
+          const frequency = (Math.random() * 10 + 2).toFixed(1); // 2.0 to 12.0 MHz
+
           pads.push({
             id: pads.length,
             x: gridX,
             y: gridY,
-            label: '',
-            radius: Math.random() * 1.5 + 1.5,
+            radius: Math.random() * 1 + 3.2, // size variations
             glowLevel: 0,
-            isSkill: false
+            voltage: baseVoltage,
+            frequency: parseFloat(frequency),
+            name: `N-${pads.length.toString().padStart(2, '0')}`
           });
         }
       }
 
-      // 5. Connect pads to chip pins
-      const usedPins = new Set();
+      // 2. Connect pads to construct PCB traces
+      // For each pad, connect to its nearest 1 or 2 neighbors
+      const traceKeys = new Set();
 
       pads.forEach((pad) => {
-        let bestPin = null;
-        let minDist = Infinity;
-        let bestChip = null;
+        // Calculate distances to all other pads
+        const targets = pads
+          .filter((p) => p.id !== pad.id)
+          .map((p) => ({ pad: p, dist: getDistance(pad.x, pad.y, p.x, p.y) }))
+          .sort((a, b) => a.dist - b.dist);
 
-        chips.forEach((chip) => {
-          chip.pins.forEach((pin, pinIdx) => {
-            const pinKey = `${chip.id}-${pinIdx}`;
-            if (usedPins.has(pinKey)) return;
+        const connectionsCount = Math.min(targets.length, isMobile ? 1 : 2);
+        for (let i = 0; i < connectionsCount; i++) {
+          const target = targets[i].pad;
 
-            const dist = getDistance(pin.x, pin.y, pad.x, pad.y);
-            if (dist < minDist) {
-              minDist = dist;
-              bestPin = pin;
-              bestChip = chip;
-            }
-          });
-        });
+          // Prevent long criss-crossing connections
+          if (getDistance(pad.x, pad.y, target.x, target.y) > (isMobile ? 220 : 380)) continue;
 
-        if (bestPin) {
-          const pinIdx = bestChip.pins.indexOf(bestPin);
-          const pinKey = `${bestChip.id}-${pinIdx}`;
-          usedPins.add(pinKey);
+          // Unique trace identifier (order-independent)
+          const traceKey = [pad.id, target.id].sort((a, b) => a - b).join('-');
+          if (traceKeys.has(traceKey)) continue;
 
-          const path = getOrthogonalPath(bestPin.x, bestPin.y, pad.x, pad.y, bestPin.side);
+          traceKeys.add(traceKey);
+
+          const path = getPCBPath(pad.x, pad.y, target.x, target.y);
 
           let len = 0;
-          for (let i = 0; i < path.length - 1; i++) {
-            len += getDistance(path[i].x, path[i].y, path[i + 1].x, path[i + 1].y);
+          for (let j = 0; j < path.length - 1; j++) {
+            len += getDistance(path[j].x, path[j].y, path[j + 1].x, path[j + 1].y);
           }
 
           traces.push({
+            id: traces.length,
             path,
             length: len,
             glowLevel: 0,
-            targetPadId: pad.id
+            padAId: pad.id,
+            padBId: target.id
           });
         }
       });
-
-      // 6. Connect leftover pins to decorative vias to make routing look dense
-      const unusedPinsList = [];
-      chips.forEach((chip) => {
-        chip.pins.forEach((pin, pinIdx) => {
-          const pinKey = `${chip.id}-${pinIdx}`;
-          if (!usedPins.has(pinKey)) {
-            unusedPinsList.push({ pin, side: pin.side });
-          }
-        });
-      });
-
-      const decorativeVias = pads.filter((p) => !p.isSkill);
-      const decConnections = Math.min(unusedPinsList.length, decorativeVias.length, isMobile ? 3 : 10);
-
-      for (let i = 0; i < decConnections; i++) {
-        const pinObj = unusedPinsList[i];
-        const via = decorativeVias[i];
-        const path = getOrthogonalPath(pinObj.pin.x, pinObj.pin.y, via.x, via.y, pinObj.side);
-
-        let len = 0;
-        for (let j = 0; j < path.length - 1; j++) {
-          len += getDistance(path[j].x, path[j].y, path[j + 1].x, path[j + 1].y);
-        }
-
-        traces.push({
-          path,
-          length: len,
-          glowLevel: 0,
-          targetPadId: via.id
-        });
-      }
     };
 
     // Calculate pulse coordinates based on distance along path segments
@@ -372,13 +193,10 @@ const InteractiveBackground = () => {
       return path[path.length - 1];
     };
 
-    // Initialize the board layout
+    // Initialize layout
     setupBoard();
 
-    // Spawn automatic ambient pulses
-    let frameCount = 0;
-
-    // Mouse movement event handlers
+    // Event handlers
     const handleMouseMove = (e) => {
       mouse.x = e.clientX;
       mouse.y = e.clientY;
@@ -396,25 +214,24 @@ const InteractiveBackground = () => {
       const cy = e.clientY;
       const maxDim = Math.max(width, height);
 
-      // Add circular sweep scan wave
+      // Trigger grid sweep scan wave
       shockwaves.push({
         x: cx,
         y: cy,
         radius: 0,
-        maxRadius: maxDim * 0.85,
+        maxRadius: maxDim * 0.9,
         speed: 8
       });
 
-      // Chain reaction: Schedule pulses when shockwave crosses trace starting pins
-      traces.forEach((trace, index) => {
-        const startPoint = trace.path[0];
-        const dist = getDistance(cx, cy, startPoint.x, startPoint.y);
-        if (dist < maxDim * 0.85) {
-          const delay = Math.floor(dist / 8); // Synchronized with shockwave propagation
+      // Chain reaction: schedule pulses from pads as sweep crosses them
+      pads.forEach((pad) => {
+        const dist = getDistance(cx, cy, pad.x, pad.y);
+        if (dist < maxDim * 0.9) {
+          const delay = Math.floor(dist / 8);
           scheduledPulses.push({
-            traceIndex: index,
+            padId: pad.id,
             delay,
-            speed: Math.random() * 2 + 4.5 // Click triggered pulses are faster
+            speed: Math.random() * 2 + 4.5
           });
         }
       });
@@ -425,32 +242,27 @@ const InteractiveBackground = () => {
     window.addEventListener('click', handleMouseClick);
     window.addEventListener('resize', setupBoard);
 
-    // Main animation loop
+    let frameCount = 0;
+
+    // Animation runner
     const animate = () => {
       frameCount++;
       const isDark = document.documentElement.classList.contains('dark');
 
-      // Clear canvas with transparent clear to let CSS bg show
       ctx.clearRect(0, 0, width, height);
 
-      // Color Theme definitions
-      const gridColor = isDark ? 'rgba(6, 182, 212, 0.015)' : 'rgba(251, 146, 60, 0.02)';
-      const traceBaseColor = isDark ? 'rgba(6, 182, 212, 0.07)' : 'rgba(251, 146, 60, 0.12)';
+      // Color Theme Definitions
+      const gridColor = isDark ? 'rgba(6, 182, 212, 0.012)' : 'rgba(251, 146, 60, 0.015)';
+      const traceBaseColor = isDark ? 'rgba(6, 182, 212, 0.06)' : 'rgba(251, 146, 60, 0.1)';
       const traceGlowColor = isDark ? 'rgba(34, 211, 238, ' : 'rgba(249, 115, 22, ';
-      const chipBg = isDark ? '#0f172a' : '#f8fafc';
-      const chipBorder = isDark ? '#1e293b' : '#cbd5e1';
-      const chipTextColor = isDark ? 'rgba(14, 165, 233, 0.35)' : 'rgba(71, 85, 105, 0.4)';
-      const pinColor = isDark ? '#64748b' : '#d97706';
       const padColor = isDark ? '#0ea5e9' : '#f97316';
       const padGlowColor = isDark ? 'rgba(34, 211, 238, ' : 'rgba(251, 146, 60, ';
-      const textColor = isDark ? '#94a3b8' : '#64748b';
-      const textActiveColor = isDark ? '#38bdf8' : '#ea580c';
       const hudColor = isDark ? 'rgba(34, 211, 238, ' : 'rgba(234, 88, 12, ';
 
-      // 1. Draw subtle board background grid lines
+      // 1. Draw subtle board grid lines
       ctx.strokeStyle = gridColor;
       ctx.lineWidth = 1;
-      const gridSize = 50;
+      const gridSize = 60;
       for (let x = 0; x < width; x += gridSize) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
@@ -464,62 +276,63 @@ const InteractiveBackground = () => {
         ctx.stroke();
       }
 
-      // 2. Spawn ambient pulses randomly
-      if (frameCount % 75 === 0 && traces.length > 0) {
-        const traceIndex = Math.floor(Math.random() * traces.length);
+      // 2. Ambient pulse generation
+      if (frameCount % 60 === 0 && traces.length > 0) {
+        const trace = traces[Math.floor(Math.random() * traces.length)];
+        const reverse = Math.random() > 0.5;
         pulses.push({
-          traceIndex,
+          traceIndex: trace.id,
           distance: 0,
-          speed: Math.random() * 1.5 + 2
+          speed: Math.random() * 1.2 + 2,
+          reverse
         });
       }
 
-      // 3. Process Scheduled pulses (cascade reactions)
+      // 3. Process Scheduled triggers
       scheduledPulses = scheduledPulses.filter((sp) => {
         sp.delay--;
         if (sp.delay <= 0) {
-          pulses.push({
-            traceIndex: sp.traceIndex,
-            distance: 0,
-            speed: sp.speed
+          // Find traces connected to this pad and spawn pulses traveling outward
+          const connectedTraces = traces.filter((t) => t.padAId === sp.padId || t.padBId === sp.padId);
+          connectedTraces.forEach((trace) => {
+            const reverse = trace.padBId === sp.padId; // if starting pad is B, we reverse travel direction
+            pulses.push({
+              traceIndex: trace.id,
+              distance: 0,
+              speed: sp.speed,
+              reverse
+            });
+            trace.glowLevel = 1.0;
           });
-          if (traces[sp.traceIndex]) {
-            traces[sp.traceIndex].glowLevel = 1.0;
-          }
+
+          const triggeredPad = pads.find((p) => p.id === sp.padId);
+          if (triggeredPad) triggeredPad.glowLevel = 1.0;
+
           return false;
         }
         return true;
       });
 
-      // 4. Update and Draw shockwaves (click wave scans)
+      // 4. Update and Draw Click Shockwaves
       shockwaves = shockwaves.filter((wave) => {
         wave.radius += wave.speed;
 
         ctx.strokeStyle = `${traceGlowColor}${Math.max(0, 1 - wave.radius / wave.maxRadius) * 0.35})`;
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.arc(wave.x, wave.y, wave.radius, 0, Math.PI * 2);
         ctx.stroke();
-
-        // Activate pads and traces crossed by wave
-        pads.forEach((pad) => {
-          const d = getDistance(wave.x, wave.y, pad.x, pad.y);
-          if (Math.abs(d - wave.radius) < wave.speed) {
-            pad.glowLevel = 1.0;
-          }
-        });
 
         return wave.radius < wave.maxRadius;
       });
 
       // 5. Update and Draw Trace Lines
       traces.forEach((trace) => {
-        // Decay activation glow
         if (trace.glowLevel > 0) {
-          trace.glowLevel -= 0.012;
+          trace.glowLevel -= 0.015;
         }
 
-        // Draw static base trace
+        // Draw baseline static traces
         ctx.beginPath();
         ctx.moveTo(trace.path[0].x, trace.path[0].y);
         for (let i = 1; i < trace.path.length; i++) {
@@ -529,7 +342,7 @@ const InteractiveBackground = () => {
         ctx.lineWidth = 1.2;
         ctx.stroke();
 
-        // Draw active glowing trace path overlay
+        // Draw active glowing traces
         if (trace.glowLevel > 0.01) {
           ctx.beginPath();
           ctx.moveTo(trace.path[0].x, trace.path[0].y);
@@ -542,60 +355,23 @@ const InteractiveBackground = () => {
         }
       });
 
-      // 6. Draw IC Chip packages
-      chips.forEach((chip) => {
-        const x = chip.cx - chip.w / 2;
-        const y = chip.cy - chip.h / 2;
-
-        // Draw Pins
-        ctx.fillStyle = pinColor;
-        chip.pins.forEach((pin) => {
-          ctx.beginPath();
-          if (pin.side === 'left') {
-            ctx.rect(pin.x, pin.y - pinW / 2, pinLen, pinW);
-          } else if (pin.side === 'right') {
-            ctx.rect(pin.x - pinLen, pin.y - pinW / 2, pinLen, pinW);
-          } else if (pin.side === 'top') {
-            ctx.rect(pin.x - pinW / 2, pin.y, pinW, pinLen);
-          } else if (pin.side === 'bottom') {
-            ctx.rect(pin.x - pinW / 2, pin.y - pinLen, pinW, pinLen);
-          }
-          ctx.fill();
-        });
-
-        // Draw Chip Body
-        ctx.beginPath();
-        ctx.roundRect(x, y, chip.w, chip.h, 6);
-        ctx.fillStyle = chipBg;
-        ctx.strokeStyle = chipBorder;
-        ctx.lineWidth = 1.5;
-        ctx.fill();
-        ctx.stroke();
-
-        // Subtle Chip Branding / Monospace Labels
-        ctx.font = '7.5px monospace';
-        ctx.fillStyle = chipTextColor;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(chip.name, chip.cx, chip.cy - 10);
-        ctx.fillText('2606-A1', chip.cx, chip.cy + 2);
-        ctx.fillText('FITRYA', chip.cx, chip.cy + 12);
-      });
-
-      // 7. Update and Draw Active Pulses
+      // 6. Update and Draw Active Pulses
       pulses = pulses.filter((pulse) => {
-        const trace = traces[pulse.traceIndex];
+        const trace = traces.find((t) => t.id === pulse.traceIndex);
         if (!trace) return false;
 
         pulse.distance += pulse.speed;
 
-        // Render pulse trailing tail circles
-        const tailSegments = 6;
-        for (let j = 0; j < tailSegments; j++) {
+        // Path representation, reversing array order if traveling reverse direction
+        const currentPath = pulse.reverse ? [...trace.path].reverse() : trace.path;
+
+        // Render pulse tail
+        const tailCount = 6;
+        for (let j = 0; j < tailCount; j++) {
           const backDist = Math.max(0, pulse.distance - j * 7);
-          const pos = getPointAtDistance(trace.path, backDist);
-          const opacity = (1 - j / tailSegments) * 0.65;
-          const r = (1 - j / 12) * 2.8;
+          const pos = getPointAtDistance(currentPath, backDist);
+          const opacity = (1 - j / tailCount) * 0.6;
+          const r = (1 - j / 12) * 2.5;
 
           ctx.beginPath();
           ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
@@ -603,31 +379,29 @@ const InteractiveBackground = () => {
           ctx.fill();
         }
 
-        // Draw pulse head
-        const headPos = getPointAtDistance(trace.path, pulse.distance);
+        // Render pulse head
+        const headPos = getPointAtDistance(currentPath, pulse.distance);
         ctx.beginPath();
-        ctx.arc(headPos.x, headPos.y, 3.2, 0, Math.PI * 2);
+        ctx.arc(headPos.x, headPos.y, 3.0, 0, Math.PI * 2);
         ctx.fillStyle = isDark ? '#ffffff' : '#ea580c';
         ctx.shadowColor = isDark ? '#22d3ee' : '#fb923c';
         ctx.shadowBlur = 4;
         ctx.fill();
-        ctx.shadowBlur = 0; // Reset shadow blur immediately to preserve frame rate
+        ctx.shadowBlur = 0; // Disable blur immediately to preserve FPS
 
-        // On complete
         if (pulse.distance >= trace.length) {
-          // Glow the destination pad
-          const targetPad = pads.find((p) => p.id === trace.targetPadId);
-          if (targetPad) {
-            targetPad.glowLevel = 1.0;
-          }
-          // Highlight trace glow slightly
+          // Activate end pad
+          const targetPadId = pulse.reverse ? trace.padAId : trace.padBId;
+          const endPad = pads.find((p) => p.id === targetPadId);
+          if (endPad) endPad.glowLevel = 1.0;
+          
           trace.glowLevel = 0.8;
           return false;
         }
         return true;
       });
 
-      // 8. Find closest pad for Mouse HUD Probe Lock
+      // 7. Find nearest pad to mouse for HUD Diagnostic lock
       let closestPad = null;
       let minMouseDist = mouse.lockRange;
 
@@ -641,101 +415,98 @@ const InteractiveBackground = () => {
         });
       }
 
-      // 9. Draw Pads (Solder joints) and Labels
+      // 8. Update and Draw Solder Pads (Vias)
       pads.forEach((pad) => {
-        // Decay pad glow
         if (pad.glowLevel > 0) {
-          pad.glowLevel -= 0.015;
+          pad.glowLevel -= 0.018;
         }
 
         const isMouseTarget = closestPad && closestPad.id === pad.id;
-        const totalGlow = Math.max(pad.glowLevel, isMouseTarget ? 0.8 : 0);
+        const totalGlow = Math.max(pad.glowLevel, isMouseTarget ? 0.75 : 0);
 
-        // Draw Solder Pad outer ring
+        // Draw outer solder ring
         ctx.beginPath();
-        ctx.arc(pad.x, pad.y, pad.radius + 3.5, 0, Math.PI * 2);
-        ctx.strokeStyle = `${padGlowColor}${0.1 + totalGlow * 0.3})`;
+        ctx.arc(pad.x, pad.y, pad.radius + 3.0, 0, Math.PI * 2);
+        ctx.strokeStyle = `${padGlowColor}${0.1 + totalGlow * 0.35})`;
         ctx.lineWidth = 1;
         ctx.stroke();
 
-        // Draw Solder Pad inner core
+        // Draw pad inner core
         ctx.beginPath();
         ctx.arc(pad.x, pad.y, pad.radius, 0, Math.PI * 2);
         ctx.fillStyle = padColor;
         ctx.fill();
 
-        // Draw inner contact point hole
+        // Draw central drill hole
         ctx.beginPath();
-        ctx.arc(pad.x, pad.y, pad.radius * 0.35, 0, Math.PI * 2);
+        ctx.arc(pad.x, pad.y, pad.radius * 0.38, 0, Math.PI * 2);
         ctx.fillStyle = isDark ? '#000000' : '#ffffff';
         ctx.fill();
 
-        // Draw glow aura if active
+        // Glow halo
         if (totalGlow > 0.05) {
           ctx.beginPath();
           ctx.arc(pad.x, pad.y, pad.radius * 2.2, 0, Math.PI * 2);
           ctx.fillStyle = `${padGlowColor}${totalGlow * 0.12})`;
           ctx.fill();
         }
-
-        // Draw Skill Label text (if it is a skill pad)
-        if (pad.isSkill) {
-          ctx.font = '10.5px Outfit, Inter, sans-serif';
-          ctx.fillStyle = isMouseTarget ? textActiveColor : textColor;
-          ctx.textAlign = 'center';
-          ctx.fillText(pad.label, pad.x, pad.y - (pad.radius + 8));
-        }
       });
 
-      // 10. Draw Virtual Diagnostic Probe HUD Overlay
+      // 9. Draw Diagnostic Probe HUD Readout
       if (closestPad && mouse.x !== null && mouse.y !== null) {
-        // Draw dotted connection line
+        const pad = closestPad;
+
+        // Dotted connection probe line
         ctx.setLineDash([4, 4]);
         ctx.beginPath();
         ctx.moveTo(mouse.x, mouse.y);
-        ctx.lineTo(closestPad.x, closestPad.y);
-        ctx.strokeStyle = `${hudColor}0.3)`;
+        ctx.lineTo(pad.x, pad.y);
+        ctx.strokeStyle = `${hudColor}0.25)`;
         ctx.lineWidth = 1.2;
         ctx.stroke();
         ctx.setLineDash([]);
 
-        // Draw HUD Target Lock circle
-        ctx.setLineDash([3, 2]);
+        // Dotted lock ring
+        ctx.setLineDash([2, 2]);
         ctx.beginPath();
-        ctx.arc(closestPad.x, closestPad.y, closestPad.radius + 7, 0, Math.PI * 2);
-        ctx.strokeStyle = `${hudColor}0.5)`;
+        ctx.arc(pad.x, pad.y, pad.radius + 6, 0, Math.PI * 2);
+        ctx.strokeStyle = `${hudColor}0.55)`;
         ctx.stroke();
         ctx.setLineDash([]);
 
-        // Draw target tick marks
-        ctx.strokeStyle = `${hudColor}0.7)`;
+        // Target tick indicators
+        ctx.strokeStyle = `${hudColor}0.75)`;
         ctx.lineWidth = 1;
-        const tickR = closestPad.radius + 11;
-        const tickLen = 3.5;
-        
+        const tickR = pad.radius + 9;
+        const tickLen = 3.0;
+
         ctx.beginPath();
-        // Top tick
-        ctx.moveTo(closestPad.x, closestPad.y - tickR);
-        ctx.lineTo(closestPad.x, closestPad.y - tickR + tickLen);
-        // Bottom tick
-        ctx.moveTo(closestPad.x, closestPad.y + tickR);
-        ctx.lineTo(closestPad.x, closestPad.y + tickR - tickLen);
-        // Left tick
-        ctx.moveTo(closestPad.x - tickR, closestPad.y);
-        ctx.lineTo(closestPad.x - tickR + tickLen, closestPad.y);
-        // Right tick
-        ctx.moveTo(closestPad.x + tickR, closestPad.y);
-        ctx.lineTo(closestPad.x + tickR - tickLen, closestPad.y);
+        ctx.moveTo(pad.x, pad.y - tickR);
+        ctx.lineTo(pad.x, pad.y - tickR + tickLen);
+        ctx.moveTo(pad.x, pad.y + tickR);
+        ctx.lineTo(pad.x, pad.y + tickR - tickLen);
+        ctx.moveTo(pad.x - tickR, pad.y);
+        ctx.lineTo(pad.x - tickR + tickLen, pad.y);
+        ctx.moveTo(pad.x + tickR, pad.y);
+        ctx.lineTo(pad.x + tickR - tickLen, pad.y);
         ctx.stroke();
 
-        // Draw coordinates & lock status box next to cursor
+        // Telemetry details text
         const textX = mouse.x + 16;
         const textY = mouse.y + 14;
         ctx.font = '8.5px monospace';
-        ctx.fillStyle = `${hudColor}0.7)`;
+        ctx.fillStyle = `${hudColor}0.75)`;
         ctx.textAlign = 'left';
-        ctx.fillText(`PROBE LOCK: ${closestPad.label || 'VIA_' + closestPad.id}`, textX, textY);
-        ctx.fillText(`COORD X:${Math.round(closestPad.x)} Y:${Math.round(closestPad.y)}`, textX, textY + 11);
+
+        // Voltages and status update dynamically based on pad active states
+        const volt = pad.glowLevel > 0.1 ? (pad.voltage * 1.05).toFixed(2) : pad.voltage.toFixed(1);
+        const status = pad.glowLevel > 0.4 ? 'ACTIVE' : pad.glowLevel > 0.05 ? 'PULSING' : 'STANDBY';
+        const freq = status === 'STANDBY' ? '0.00' : (pad.frequency * (pad.glowLevel * 0.4 + 0.8)).toFixed(2);
+
+        ctx.fillText(`PROBE TARGET: ${pad.name}`, textX, textY);
+        ctx.fillText(`VOLTAGE: ${volt}V [${status}]`, textX, textY + 11);
+        ctx.fillText(`FREQ: ${freq} MHz`, textX, textY + 22);
+        ctx.fillText(`COORD X:${Math.round(pad.x)} Y:${Math.round(pad.y)}`, textX, textY + 33);
       }
 
       animationFrameId = requestAnimationFrame(animate);
